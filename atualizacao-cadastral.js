@@ -4,15 +4,13 @@ document.addEventListener("click",async e=>{
  e.preventDefault();
  b.innerText="AGUARDE...";
  b.disabled=true;
-
  const f=new FormData;
  f.append("IdRecursoDownload","110");
  f.append("IdRecursoDownloadArquivos","125");
-
  try{
   const r=await axios.post("/Marketing/AddRegistroRecursoDownloadMarketing",f);
   if(r.data?.StatusCode!=200)throw 0;
-  location.href="https://formockta.lovable.app/f/atualizacaoevolua";
+  location.href="https://linktr.ee/perf0rmance";
  }catch{
   b.innerText="TENTAR NOVAMENTE";
   b.disabled=false;
