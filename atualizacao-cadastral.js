@@ -12,7 +12,7 @@ document.addEventListener("click",async e=>{
  try{
   const r=await axios.post("/Marketing/AddRegistroRecursoDownloadMarketing",f);
   if(r.data?.StatusCode!=200)throw 0;
-  location.href="URL_DO_FORMULARIO";
+  location.href="https://formockta.lovable.app/f/atualizacaoevolua";
  }catch{
   b.innerText="TENTAR NOVAMENTE";
   b.disabled=false;
