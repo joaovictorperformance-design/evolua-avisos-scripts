@@ -1,4 +1,5 @@
 (async()=>{
+ if(location.pathname.toLowerCase()!="/inicio/painel")return;
  const C={
   form:"https://formockta.lovable.app/f/atualizacaoevolua",
   destaque:4724,
