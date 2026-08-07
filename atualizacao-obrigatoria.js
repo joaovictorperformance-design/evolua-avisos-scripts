@@ -58,7 +58,9 @@
       Number(r.status);
 
     if(status!==200){
-      throw new Error("Falha ao registrar ocultação do aviso.");
+      throw new Error(
+        "Falha ao registrar ocultação do aviso."
+      );
     }
   };
 
@@ -217,10 +219,21 @@
       polo
     );
 
+    console.log(
+      "[Evolua Gateway] Origem identificada:",
+      location.origin
+    );
+
     mostrarVerificacao();
 
     const destino=
-      `${C.gateway}?polo=${encodeURIComponent(polo)}`;
+      `${C.gateway}?polo=${encodeURIComponent(polo)}`+
+      `&return_origin=${encodeURIComponent(location.origin)}`;
+
+    console.log(
+      "[Evolua Gateway] Redirecionando para:",
+      destino
+    );
 
     setTimeout(()=>{
       location.href=destino;
