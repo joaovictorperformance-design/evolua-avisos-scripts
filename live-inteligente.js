@@ -1,7 +1,14 @@
 (()=>{
   if(location.pathname.toLowerCase()!=="/inicio/painel") return;
 
-  const SCRIPT=document.currentScript;
+  const SCRIPT=
+    [...document.querySelectorAll("script")]
+      .reverse()
+      .find(s=>
+        (s.src||"").includes("live-inteligente.js") &&
+        s.dataset.evento
+      )
+    ||document.currentScript;
 
   const C={
     slug:
@@ -20,7 +27,7 @@
 
     consultor:
       SCRIPT?.dataset.consultor||
-      "https://linktr.ee/perf0rmance",
+      "https://linkhubtree.lovable.app/performance",
 
     gateway:
       "https://evolua-trackr.lovable.app/gateway"
@@ -131,7 +138,7 @@
   };
 
   const formatarTempo=ms=>{
-    if(ms<0)ms=0;
+    if(ms<0) ms=0;
 
     const total=
       Math.floor(ms/1000);
@@ -186,7 +193,7 @@
   };
 
   const irGateway=async force=>{
-    if(redirecionando)return;
+    if(redirecionando) return;
 
     redirecionando=true;
 
@@ -272,18 +279,6 @@
       if(restante<=0){
         clearInterval(timer);
 
-        /*
-          A live começou.
-          O parceiro ainda não possui marcador local,
-          então passa pelo Gateway.
-
-          Se nunca entrou:
-          → registra e Teams.
-
-          Se já entrou:
-          → Gateway devolve para o Enter com
-            live=ja-entrou.
-        */
         irGateway(false);
 
         return;
@@ -441,6 +436,17 @@
 
   const iniciar=async()=>{
     try{
+      console.log(
+        "[Smart Live] Configuração carregada:",
+        {
+          slug:C.slug,
+          titulo:C.titulo,
+          inicio:C.inicio,
+          fim:C.fim,
+          consultor:C.consultor
+        }
+      );
+
       if(!C.inicio||!C.fim){
         throw new Error(
           "Datas da live não configuradas."
@@ -471,10 +477,6 @@
       const eventoRetorno=
         url.searchParams.get("evento");
 
-      /*
-        Retorno explícito do Gateway:
-        o polo já entrou anteriormente.
-      */
       if(
         retornoLive==="ja-entrou"&&
         eventoRetorno===C.slug
@@ -483,9 +485,6 @@
         return;
       }
 
-      /*
-        Retorno pós-live.
-      */
       if(
         retornoLive==="encerrada"&&
         eventoRetorno===C.slug
@@ -497,36 +496,16 @@
       const agora=
         Date.now();
 
-      /*
-        ESTADO 1
-        Antes da live.
-      */
       if(agora<inicio.getTime()){
         mostrarAntes();
         return;
       }
 
-      /*
-        ESTADO 4
-        Após a live.
-      */
       if(agora>fim.getTime()){
         mostrarEncerrada();
         return;
       }
 
-      /*
-        ESTADO 2 ou 3.
-
-        Como o Enter não pode consultar o Tracker
-        diretamente por CSP, passamos pelo Gateway.
-
-        Primeira vez:
-        → Teams.
-
-        Já entrou:
-        → volta com live=ja-entrou.
-      */
       await esperar(350);
 
       irGateway(false);
