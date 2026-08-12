@@ -1,0 +1,556 @@
+(()=>{
+  if(location.pathname.toLowerCase()!=="/inicio/painel") return;
+
+  const SCRIPT=document.currentScript;
+
+  const C={
+    slug:
+      SCRIPT?.dataset.evento||
+      "sprint-ingles-evolua",
+
+    titulo:
+      SCRIPT?.dataset.titulo||
+      "Sprint de Inglês Evolua",
+
+    inicio:
+      SCRIPT?.dataset.inicio||"",
+
+    fim:
+      SCRIPT?.dataset.fim||"",
+
+    consultor:
+      SCRIPT?.dataset.consultor||
+      "https://linktr.ee/perf0rmance",
+
+    gateway:
+      "https://evolua-trackr.lovable.app/gateway"
+  };
+
+  let timer=null;
+  let redirecionando=false;
+
+  const esperar=ms=>
+    new Promise(resolve=>setTimeout(resolve,ms));
+
+  const obterPolo=async()=>{
+    const r=await axios.get("/Configuracoes/TokenPolo");
+
+    const doc=new DOMParser().parseFromString(
+      String(r.data||""),
+      "text/html"
+    );
+
+    const seletores=[
+      "#inputCodigo",
+      "#CodigoPolo",
+      "[name='CodigoPolo']",
+      "[name='CodigoExterno']",
+      "[name='CodigoExternoPolo']"
+    ];
+
+    for(const seletor of seletores){
+      const el=doc.querySelector(seletor);
+
+      const valor=
+        el?.value||
+        el?.getAttribute("value")||
+        el?.textContent||
+        "";
+
+      const digitos=String(valor).replace(/\D/g,"");
+
+      if(digitos&&digitos.length<=6){
+        return digitos.padStart(6,"0");
+      }
+    }
+
+    throw new Error(
+      "Código do polo não identificado."
+    );
+  };
+
+  const limparParametrosLive=()=>{
+    const url=new URL(location.href);
+
+    url.searchParams.delete("live");
+    url.searchParams.delete("evento");
+
+    history.replaceState(
+      {},
+      "",
+      url.pathname+url.search+url.hash
+    );
+  };
+
+  const getContainer=()=>{
+    return (
+      document.querySelector(
+        `[data-live-aviso="${C.slug}"]`
+      )||
+      document.querySelector(
+        "[data-live-aviso]"
+      )
+    );
+  };
+
+  const setConteudo=html=>{
+    const container=getContainer();
+
+    if(!container){
+      console.warn(
+        "[Smart Live] Container do aviso não encontrado."
+      );
+
+      return;
+    }
+
+    container.innerHTML=html;
+  };
+
+  const botao=(texto,onclick)=>{
+    return `
+      <button
+        type="button"
+        onclick="${onclick}"
+        style="
+          display:inline-block;
+          border:0;
+          background:#0A4199;
+          color:#fff;
+          padding:14px 28px;
+          border-radius:10px;
+          font:bold 17px Arial;
+          cursor:pointer;
+          margin-top:12px;
+          box-shadow:0 5px 14px rgba(0,0,0,.15)
+        "
+      >
+        ${texto}
+      </button>
+    `;
+  };
+
+  const formatarTempo=ms=>{
+    if(ms<0)ms=0;
+
+    const total=
+      Math.floor(ms/1000);
+
+    const dias=
+      Math.floor(total/86400);
+
+    const horas=
+      Math.floor((total%86400)/3600);
+
+    const minutos=
+      Math.floor((total%3600)/60);
+
+    const segundos=
+      total%60;
+
+    const pad=n=>
+      String(n).padStart(2,"0");
+
+    if(dias>0){
+      return `${dias}d ${pad(horas)}:${pad(minutos)}:${pad(segundos)}`;
+    }
+
+    return `${pad(horas)}:${pad(minutos)}:${pad(segundos)}`;
+  };
+
+  const urlGateway=async force=>{
+    const polo=await obterPolo();
+
+    const url=new URL(
+      `${C.gateway}/${C.slug}`
+    );
+
+    url.searchParams.set(
+      "polo",
+      polo
+    );
+
+    url.searchParams.set(
+      "return_origin",
+      location.origin
+    );
+
+    if(force){
+      url.searchParams.set(
+        "force_join",
+        "1"
+      );
+    }
+
+    return url.toString();
+  };
+
+  const irGateway=async force=>{
+    if(redirecionando)return;
+
+    redirecionando=true;
+
+    try{
+      setConteudo(`
+        <div style="
+          text-align:center;
+          font-family:Arial;
+          padding:24px
+        ">
+          <div style="
+            font-size:24px;
+            font-weight:bold;
+            color:#0A4199
+          ">
+            🔴 Preparando seu acesso...
+          </div>
+
+          <p style="
+            margin-top:12px;
+            font-size:16px;
+            color:#444
+          ">
+            Aguarde enquanto identificamos sua unidade.
+          </p>
+        </div>
+      `);
+
+      const destino=
+        await urlGateway(force);
+
+      location.href=destino;
+
+    }catch(erro){
+      redirecionando=false;
+
+      console.error(
+        "[Smart Live] Erro ao acessar gateway:",
+        erro
+      );
+
+      setConteudo(`
+        <div style="
+          font-family:Arial;
+          text-align:center;
+          padding:22px
+        ">
+          <b style="
+            color:#b45309;
+            font-size:19px
+          ">
+            ⚠️ Não conseguimos liberar o acesso.
+          </b>
+
+          <p>
+            Atualize a página e tente novamente.
+          </p>
+        </div>
+      `);
+    }
+  };
+
+  window.evoluaLiveReentrar=()=>{
+    irGateway(true);
+  };
+
+  window.evoluaLiveConsultor=()=>{
+    window.open(
+      C.consultor,
+      "_blank",
+      "noopener"
+    );
+  };
+
+  const mostrarAntes=()=>{
+    const inicio=
+      new Date(C.inicio);
+
+    const atualizar=()=>{
+      const restante=
+        inicio.getTime()-Date.now();
+
+      if(restante<=0){
+        clearInterval(timer);
+
+        /*
+          A live começou.
+          O parceiro ainda não possui marcador local,
+          então passa pelo Gateway.
+
+          Se nunca entrou:
+          → registra e Teams.
+
+          Se já entrou:
+          → Gateway devolve para o Enter com
+            live=ja-entrou.
+        */
+        irGateway(false);
+
+        return;
+      }
+
+      setConteudo(`
+        <div style="
+          text-align:center;
+          font-family:Arial;
+          padding:18px 12px 22px
+        ">
+
+          <div style="
+            font-size:26px;
+            font-weight:bold;
+            color:#0A4199;
+            margin-bottom:8px
+          ">
+            ☕ ${C.titulo}
+          </div>
+
+          <div style="
+            font-size:15px;
+            color:#555
+          ">
+            Nosso encontro começa em
+          </div>
+
+          <div style="
+            font-size:34px;
+            font-weight:bold;
+            margin:12px 0;
+            color:#EA1C52;
+            letter-spacing:1px
+          ">
+            ${formatarTempo(restante)}
+          </div>
+
+          <div style="
+            font-size:15px;
+            color:#555
+          ">
+            Fique atento. Quando a live começar,
+            o acesso será liberado automaticamente.
+          </div>
+
+        </div>
+      `);
+    };
+
+    atualizar();
+
+    timer=setInterval(
+      atualizar,
+      1000
+    );
+  };
+
+  const mostrarAcontecendo=()=>{
+    limparParametrosLive();
+
+    setConteudo(`
+      <div style="
+        text-align:center;
+        font-family:Arial;
+        padding:20px 12px 24px
+      ">
+
+        <div style="
+          font-size:13px;
+          font-weight:bold;
+          color:#EA1C52;
+          letter-spacing:1px;
+          margin-bottom:5px
+        ">
+          ● AO VIVO
+        </div>
+
+        <div style="
+          font-size:27px;
+          font-weight:bold;
+          color:#111827
+        ">
+          ${C.titulo}
+        </div>
+
+        <p style="
+          font-size:16px;
+          line-height:1.5;
+          color:#555;
+          margin:12px auto 4px;
+          max-width:600px
+        ">
+          Sua entrada já foi registrada.
+          A live está acontecendo agora.
+        </p>
+
+        ${botao(
+          "▶ VOLTAR PARA A LIVE",
+          "window.evoluaLiveReentrar()"
+        )}
+
+      </div>
+    `);
+  };
+
+  const mostrarEncerrada=()=>{
+    limparParametrosLive();
+
+    setConteudo(`
+      <div style="
+        text-align:center;
+        font-family:Arial;
+        padding:20px 12px 24px
+      ">
+
+        <div style="
+          font-size:26px;
+          font-weight:bold;
+          color:#111827
+        ">
+          ✅ ${C.titulo}
+        </div>
+
+        <div style="
+          margin-top:7px;
+          font-size:18px;
+          font-weight:bold;
+          color:#555
+        ">
+          Live encerrada
+        </div>
+
+        <p style="
+          font-size:16px;
+          line-height:1.5;
+          color:#555;
+          max-width:600px;
+          margin:14px auto 2px
+        ">
+          O encontro ao vivo já terminou.
+          Para saber mais sobre os conteúdos,
+          novidades e próximos passos apresentados,
+          fale com nosso time.
+        </p>
+
+        ${botao(
+          "💬 FALAR COM O CONSULTOR",
+          "window.evoluaLiveConsultor()"
+        )}
+
+      </div>
+    `);
+  };
+
+  const iniciar=async()=>{
+    try{
+      if(!C.inicio||!C.fim){
+        throw new Error(
+          "Datas da live não configuradas."
+        );
+      }
+
+      const inicio=
+        new Date(C.inicio);
+
+      const fim=
+        new Date(C.fim);
+
+      if(
+        Number.isNaN(inicio.getTime())||
+        Number.isNaN(fim.getTime())
+      ){
+        throw new Error(
+          "Data/hora inválida."
+        );
+      }
+
+      const url=
+        new URL(location.href);
+
+      const retornoLive=
+        url.searchParams.get("live");
+
+      const eventoRetorno=
+        url.searchParams.get("evento");
+
+      /*
+        Retorno explícito do Gateway:
+        o polo já entrou anteriormente.
+      */
+      if(
+        retornoLive==="ja-entrou"&&
+        eventoRetorno===C.slug
+      ){
+        mostrarAcontecendo();
+        return;
+      }
+
+      /*
+        Retorno pós-live.
+      */
+      if(
+        retornoLive==="encerrada"&&
+        eventoRetorno===C.slug
+      ){
+        mostrarEncerrada();
+        return;
+      }
+
+      const agora=
+        Date.now();
+
+      /*
+        ESTADO 1
+        Antes da live.
+      */
+      if(agora<inicio.getTime()){
+        mostrarAntes();
+        return;
+      }
+
+      /*
+        ESTADO 4
+        Após a live.
+      */
+      if(agora>fim.getTime()){
+        mostrarEncerrada();
+        return;
+      }
+
+      /*
+        ESTADO 2 ou 3.
+
+        Como o Enter não pode consultar o Tracker
+        diretamente por CSP, passamos pelo Gateway.
+
+        Primeira vez:
+        → Teams.
+
+        Já entrou:
+        → volta com live=ja-entrou.
+      */
+      await esperar(350);
+
+      irGateway(false);
+
+    }catch(erro){
+      console.error(
+        "[Smart Live] Erro:",
+        erro
+      );
+
+      setConteudo(`
+        <div style="
+          text-align:center;
+          padding:20px;
+          font-family:Arial;
+          color:#664d03
+        ">
+          ⚠️ Não foi possível carregar
+          as informações da live.
+        </div>
+      `);
+    }
+  };
+
+  iniciar();
+
+})();
