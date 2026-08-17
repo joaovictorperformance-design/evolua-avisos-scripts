@@ -13,17 +13,19 @@
   const C={
     slug:
       SCRIPT?.dataset.evento||
-      "sprint-ingles-evolua",
+      "super-cafe-tech",
 
     titulo:
       SCRIPT?.dataset.titulo||
-      "Sprint de Inglês Evolua",
+      "Super Café Tech",
 
     inicio:
-      SCRIPT?.dataset.inicio||"",
+      SCRIPT?.dataset.inicio||
+      "2026-08-18T15:00:00-03:00",
 
     fim:
-      SCRIPT?.dataset.fim||"",
+      SCRIPT?.dataset.fim||
+      "2026-08-18T16:00:00-03:00",
 
     consultor:
       SCRIPT?.dataset.consultor||
@@ -64,7 +66,8 @@
         el?.textContent||
         "";
 
-      const digitos=String(valor).replace(/\D/g,"");
+      const digitos=
+        String(valor).replace(/\D/g,"");
 
       if(digitos&&digitos.length<=6){
         return digitos.padStart(6,"0");
@@ -107,7 +110,6 @@
       console.warn(
         "[Smart Live] Container do aviso não encontrado."
       );
-
       return;
     }
 
@@ -225,7 +227,8 @@
       const destino=
         await urlGateway(force);
 
-      location.href=destino;
+      location.href=
+        destino;
 
     }catch(erro){
       redirecionando=false;
@@ -278,9 +281,7 @@
 
       if(restante<=0){
         clearInterval(timer);
-
         irGateway(false);
-
         return;
       }
 
@@ -321,8 +322,9 @@
             font-size:15px;
             color:#555
           ">
-            Fique atento. Quando a live começar,
-            o acesso será liberado automaticamente.
+            Lançamentos, soluções e novidades
+            estão chegando. Quando a live começar,
+            seu acesso será liberado automaticamente.
           </div>
 
         </div>
@@ -331,10 +333,11 @@
 
     atualizar();
 
-    timer=setInterval(
-      atualizar,
-      1000
-    );
+    timer=
+      setInterval(
+        atualizar,
+        1000
+      );
   };
 
   const mostrarAcontecendo=()=>{
@@ -373,7 +376,7 @@
           max-width:600px
         ">
           Sua entrada já foi registrada.
-          A live está acontecendo agora.
+          O Super Café Tech está acontecendo agora.
         </p>
 
         ${botao(
@@ -420,8 +423,8 @@
           margin:14px auto 2px
         ">
           O encontro ao vivo já terminou.
-          Para saber mais sobre os conteúdos,
-          novidades e próximos passos apresentados,
+          Para saber mais sobre os lançamentos,
+          soluções e novidades apresentadas,
           fale com nosso time.
         </p>
 
