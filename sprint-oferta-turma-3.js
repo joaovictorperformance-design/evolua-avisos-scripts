@@ -21,11 +21,17 @@
     img.dataset.sprintClicavel="1";
     img.style.cursor="pointer";
     img.style.transition="transform .15s ease,filter .15s ease";
+    img.style.display="block";
+    img.style.maxWidth="100%";
     img.title="Clique para entrar no grupo da Sprint de Oferta";
     img.tabIndex=0;
 
     const abrir=()=>{
-      window.open(LINK,"_blank","noopener,noreferrer");
+      window.open(
+        LINK,
+        "_blank",
+        "noopener,noreferrer"
+      );
     };
 
     img.addEventListener("click",abrir);
@@ -47,38 +53,62 @@
       img.style.transform="";
     });
 
-    /* ORIENTAÇÃO ABAIXO DA ARTE */
-    if(!document.querySelector("#sprint-oferta-orientacao")){
+    /* CRIA BLOCO VERTICAL: IMAGEM + TEXTO */
+    if(!document.querySelector("#sprint-oferta-wrapper")){
+
+      const wrapper=document.createElement("div");
+
+      wrapper.id="sprint-oferta-wrapper";
+      wrapper.style.cssText=
+        "width:100%;"+
+        "display:flex;"+
+        "flex-direction:column;"+
+        "align-items:center;"+
+        "justify-content:center;"+
+        "text-align:center;"+
+        "margin:0 auto;";
+
+      img.parentNode.insertBefore(wrapper,img);
+      wrapper.appendChild(img);
+
       const aviso=document.createElement("div");
 
       aviso.id="sprint-oferta-orientacao";
+
       aviso.innerHTML=
-        '👆 <b>Quer participar da nova turma?</b> '+
+        '👆 <b>Quer participar da nova turma?</b><br>'+
         'Clique na imagem acima para entrar no grupo oficial da Sprint de Oferta.';
 
       aviso.style.cssText=
         "font-family:Arial,sans-serif;"+
         "font-size:16px;"+
-        "text-align:center;"+
+        "line-height:1.45;"+
         "color:#172033;"+
-        "margin:18px auto 10px;"+
-        "padding:12px 20px;"+
-        "max-width:760px;"+
+        "margin:14px auto 6px;"+
+        "padding:8px 16px;"+
+        "width:100%;"+
+        "box-sizing:border-box;"+
+        "text-align:center;"+
         "cursor:pointer;";
 
       aviso.addEventListener("click",abrir);
 
-      img.insertAdjacentElement("afterend",aviso);
+      wrapper.appendChild(aviso);
     }
 
-    console.log("[Sprint Oferta] Arte clicável ativada.");
+    console.log(
+      "[Sprint Oferta] Arte clicável ativada."
+    );
+
     return true;
   };
 
   if(ativar()) return;
 
   const observer=new MutationObserver(()=>{
-    if(ativar()) observer.disconnect();
+    if(ativar()){
+      observer.disconnect();
+    }
   });
 
   observer.observe(document.documentElement,{
@@ -86,5 +116,7 @@
     subtree:true
   });
 
-  setTimeout(()=>observer.disconnect(),15000);
+  setTimeout(()=>{
+    observer.disconnect();
+  },15000);
 })();
