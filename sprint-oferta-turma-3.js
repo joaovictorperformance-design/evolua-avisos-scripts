@@ -13,47 +13,212 @@
 
     if(!modal) return false;
 
+    const dialog=
+      modal.closest(".modal-dialog");
+
     const body=
       modal.querySelector(".modal-body") ||
       marcador.parentElement;
 
     if(!body) return false;
 
-    /* Usa a própria imagem já carregada pelo ENTER */
-    const img=body.querySelector("img");
-    if(!img) return false;
+    /*
+      Localiza a imagem original carregada pelo ENTER.
+      Vamos aproveitar apenas a URL dela.
+    */
+    const imagemOriginal=body.querySelector("img");
+    if(!imagemOriginal) return false;
 
-    /* Evita ativar mais de uma vez */
-    if(img.dataset.sprintOferta==="1") return true;
-    img.dataset.sprintOferta="1";
+    if(modal.dataset.sprintOfertaFinal==="1"){
+      return true;
+    }
 
-    /* Expande o espaço do destaque */
-    modal.style.width="100%";
-    modal.style.maxWidth="none";
+    modal.dataset.sprintOfertaFinal="1";
 
-    body.style.padding="10px 18px";
-    body.style.margin="0";
-    body.style.textAlign="center";
-    body.style.overflow="visible";
+    const SRC=
+      imagemOriginal.currentSrc ||
+      imagemOriginal.src;
 
-    /* Faz a imagem usar o espaço disponível sem cortar */
-    img.style.setProperty("display","block","important");
-    img.style.setProperty("width","100%","important");
-    img.style.setProperty("max-width","1500px","important");
-    img.style.setProperty("height","auto","important");
-    img.style.setProperty("max-height","none","important");
-    img.style.setProperty("object-fit","contain","important");
-    img.style.setProperty("margin","0 auto","important");
+    if(!SRC) return false;
 
-    /* Aparência clicável */
-    img.style.cursor="pointer";
-    img.style.transition=
-      "filter .18s ease, transform .18s ease";
+    /*
+      EXPANDE O MODAL
+    */
+    if(dialog){
+      dialog.style.setProperty(
+        "width",
+        "94vw",
+        "important"
+      );
 
-    img.title=
+      dialog.style.setProperty(
+        "max-width",
+        "1600px",
+        "important"
+      );
+
+      dialog.style.setProperty(
+        "margin",
+        "30px auto",
+        "important"
+      );
+    }
+
+    modal.style.setProperty(
+      "width",
+      "100%",
+      "important"
+    );
+
+    modal.style.setProperty(
+      "max-width",
+      "none",
+      "important"
+    );
+
+    modal.style.setProperty(
+      "overflow",
+      "visible",
+      "important"
+    );
+
+    /*
+      LIMPA O CORPO DO DESTAQUE
+
+      Aqui eliminamos a imagem antiga e os estilos/classes
+      que o ENTER colocou nela.
+    */
+    body.innerHTML="";
+
+    body.style.setProperty(
+      "padding",
+      "14px",
+      "important"
+    );
+
+    body.style.setProperty(
+      "margin",
+      "0",
+      "important"
+    );
+
+    body.style.setProperty(
+      "width",
+      "100%",
+      "important"
+    );
+
+    body.style.setProperty(
+      "height",
+      "auto",
+      "important"
+    );
+
+    body.style.setProperty(
+      "min-height",
+      "0",
+      "important"
+    );
+
+    body.style.setProperty(
+      "max-height",
+      "none",
+      "important"
+    );
+
+    body.style.setProperty(
+      "overflow",
+      "visible",
+      "important"
+    );
+
+    body.style.setProperty(
+      "display",
+      "flex",
+      "important"
+    );
+
+    body.style.setProperty(
+      "justify-content",
+      "center",
+      "important"
+    );
+
+    body.style.setProperty(
+      "align-items",
+      "flex-start",
+      "important"
+    );
+
+    /*
+      CRIA UMA NOVA IMAGEM
+
+      Sem classes nem estilos herdados da imagem antiga.
+    */
+    const banner=document.createElement("img");
+
+    banner.src=SRC;
+
+    banner.alt=
+      "Sprint de Oferta - Nova Turma";
+
+    banner.title=
       "Clique para entrar no grupo oficial da Sprint de Oferta";
 
-    img.tabIndex=0;
+    banner.style.setProperty(
+      "display",
+      "block",
+      "important"
+    );
+
+    banner.style.setProperty(
+      "width",
+      "100%",
+      "important"
+    );
+
+    banner.style.setProperty(
+      "max-width",
+      "1500px",
+      "important"
+    );
+
+    banner.style.setProperty(
+      "height",
+      "auto",
+      "important"
+    );
+
+    banner.style.setProperty(
+      "max-height",
+      "none",
+      "important"
+    );
+
+    banner.style.setProperty(
+      "object-fit",
+      "contain",
+      "important"
+    );
+
+    banner.style.setProperty(
+      "object-position",
+      "center",
+      "important"
+    );
+
+    banner.style.setProperty(
+      "margin",
+      "0 auto",
+      "important"
+    );
+
+    banner.style.cursor="pointer";
+
+    banner.style.transition=
+      "filter .18s ease, transform .18s ease";
+
+    banner.tabIndex=0;
 
     const abrir=()=>{
       window.open(
@@ -63,44 +228,66 @@
       );
     };
 
-    /* Clique */
-    img.addEventListener("click",abrir);
+    banner.addEventListener(
+      "click",
+      abrir
+    );
 
-    /* Acessibilidade pelo teclado */
-    img.addEventListener("keydown",e=>{
-      if(e.key==="Enter"||e.key===" "){
-        e.preventDefault();
-        abrir();
+    banner.addEventListener(
+      "keydown",
+      e=>{
+        if(
+          e.key==="Enter" ||
+          e.key===" "
+        ){
+          e.preventDefault();
+          abrir();
+        }
       }
-    });
+    );
 
-    /* Pequeno efeito visual */
-    img.addEventListener("mouseenter",()=>{
-      img.style.filter="brightness(1.05)";
-      img.style.transform="scale(1.002)";
-    });
+    banner.addEventListener(
+      "mouseenter",
+      ()=>{
+        banner.style.filter=
+          "brightness(1.05)";
 
-    img.addEventListener("mouseleave",()=>{
-      img.style.filter="";
-      img.style.transform="";
-    });
+        banner.style.transform=
+          "scale(1.002)";
+      }
+    );
+
+    banner.addEventListener(
+      "mouseleave",
+      ()=>{
+        banner.style.filter="";
+        banner.style.transform="";
+      }
+    );
+
+    body.appendChild(banner);
 
     console.log(
-      "[Sprint Oferta] Imagem nativa expandida e clicável."
+      "[Sprint Oferta] Banner reconstruído, expandido e clicável."
     );
 
     return true;
   };
 
-  /* Tenta ativar imediatamente */
+  /*
+    Tenta imediatamente.
+  */
   if(ativar()) return;
 
-  /* Caso o ENTER monte o destaque depois */
-  const observer=new MutationObserver(()=>{
-    if(ativar()){
-      observer.disconnect();
-    }
-  });
+  /*
+    Caso o ENTER carregue o destaque depois.
+  */
+  const observer=
+    new MutationObserver(()=>{
+      if(ativar()){
+        observer.disconnect();
+      }
+    });
 
   observer.observe(
     document.documentElement,
@@ -110,7 +297,6 @@
     }
   );
 
-  /* Segurança para não deixar observer rodando para sempre */
   setTimeout(()=>{
     observer.disconnect();
   },15000);
