@@ -1,107 +1,96 @@
 (()=>{
   if(location.pathname.toLowerCase()!=="/inicio/painel") return;
 
-  const LINK="https://chat.whatsapp.com/KdWe44sqcoZHKEIyEuPj0t";
+  const C={
+    link:"https://chat.whatsapp.com/KdWe44sqcoZHKEIyEuPj0t",
+    imagem:"https://cdn.jsdelivr.net/gh/joaovictorperformance-design/assets@d4cae38/sprint-oferta-turma-3.png"
+  };
 
   const ativar=()=>{
     const marcador=document.querySelector("#sprint-oferta-turma-3");
     if(!marcador) return false;
 
-    const area=
+    const modal=
       marcador.closest(".modal-content") ||
       marcador.parentElement;
 
-    if(!area) return false;
+    if(!modal) return false;
 
-    const img=area.querySelector("img");
-    if(!img) return false;
+    if(modal.dataset.sprintOferta==="1") return true;
+    modal.dataset.sprintOferta="1";
 
-    if(img.dataset.sprintClicavel==="1") return true;
+    /* Localiza área principal do destaque */
+    const body=
+      modal.querySelector(".modal-body") ||
+      marcador.parentElement;
 
-    img.dataset.sprintClicavel="1";
+    if(!body) return false;
+
+    /* Remove conteúdo visual antigo, preservando marcador/script */
+    body.querySelectorAll("img").forEach(img=>img.remove());
+
+    /* Ajusta o espaço do destaque */
+    modal.style.maxWidth="none";
+    modal.style.width="100%";
+
+    body.style.padding="12px";
+    body.style.margin="0";
+    body.style.textAlign="center";
+    body.style.overflow="hidden";
+
+    /* Cria nosso banner */
+    const banner=document.createElement("img");
+
+    banner.src=C.imagem;
+    banner.alt="Sprint de Oferta - Nova Turma";
+    banner.title="Clique para entrar no grupo oficial da Sprint de Oferta";
+
+    banner.style.cssText=
+      "display:block;"+
+      "width:min(1500px,96vw);"+
+      "height:auto;"+
+      "max-height:calc(100vh - 130px);"+
+      "object-fit:contain;"+
+      "margin:0 auto;"+
+      "cursor:pointer;"+
+      "border-radius:8px;"+
+      "transition:filter .18s ease,transform .18s ease;";
 
     const abrir=()=>{
       window.open(
-        LINK,
+        C.link,
         "_blank",
         "noopener,noreferrer"
       );
     };
 
-    img.style.cursor="pointer";
-    img.style.display="block";
-    img.style.maxWidth="100%";
-    img.style.height="auto";
-    img.style.transition="filter .15s ease";
-    img.title="Clique para entrar no grupo da Sprint de Oferta";
-    img.tabIndex=0;
+    banner.addEventListener("click",abrir);
 
-    img.addEventListener("click",abrir);
+    banner.addEventListener("mouseenter",()=>{
+      banner.style.filter="brightness(1.06)";
+      banner.style.transform="scale(1.003)";
+    });
 
-    img.addEventListener("keydown",e=>{
+    banner.addEventListener("mouseleave",()=>{
+      banner.style.filter="";
+      banner.style.transform="";
+    });
+
+    banner.tabIndex=0;
+
+    banner.addEventListener("keydown",e=>{
       if(e.key==="Enter"||e.key===" "){
         e.preventDefault();
         abrir();
       }
     });
 
-    img.addEventListener("mouseenter",()=>{
-      img.style.filter="brightness(1.06)";
-    });
+    body.prepend(banner);
 
-    img.addEventListener("mouseleave",()=>{
-      img.style.filter="";
-    });
+    console.log(
+      "[Sprint Oferta] Banner expandido ativado."
+    );
 
-    if(!document.querySelector("#sprint-oferta-wrapper")){
-      const wrapper=document.createElement("div");
-
-      wrapper.id="sprint-oferta-wrapper";
-      wrapper.style.cssText=
-        "position:relative;"+
-        "display:inline-block;"+
-        "max-width:100%;"+
-        "line-height:0;";
-
-      img.parentNode.insertBefore(wrapper,img);
-      wrapper.appendChild(img);
-
-      const aviso=document.createElement("div");
-
-      aviso.id="sprint-oferta-orientacao";
-
-      aviso.innerHTML=
-        '👆 <b>Clique na imagem para entrar no grupo oficial da Sprint</b>';
-
-      aviso.style.cssText=
-        "position:absolute;"+
-        "left:50%;"+
-        "bottom:10px;"+
-        "transform:translateX(-50%);"+
-        "width:calc(100% - 24px);"+
-        "box-sizing:border-box;"+
-        "padding:10px 14px;"+
-        "border-radius:10px;"+
-        "background:rgba(0,0,0,.72);"+
-        "color:#fff;"+
-        "font-family:Arial,sans-serif;"+
-        "font-size:15px;"+
-        "font-weight:500;"+
-        "line-height:1.3;"+
-        "text-align:center;"+
-        "cursor:pointer;"+
-        "z-index:10;"+
-        "backdrop-filter:blur(4px);";
-
-      aviso.addEventListener("click",e=>{
-        e.stopPropagation();
-        abrir();
-      });
-
-      wrapper.appendChild(aviso);
-    }
-
-    console.log("[Sprint Oferta] Arte clicável ativada.");
     return true;
   };
 
@@ -116,7 +105,5 @@
     subtree:true
   });
 
-  setTimeout(()=>{
-    observer.disconnect();
-  },15000);
+  setTimeout(()=>observer.disconnect(),15000);
 })();
