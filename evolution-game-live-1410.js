@@ -171,7 +171,7 @@
     btn.addEventListener("click",go);
 
     info.append(heading,detail,countdown,btn);
-    wrap.append(image,info);
+    wrap.append(info,image);
     body.append(wrap);
 
     const update=()=>{
