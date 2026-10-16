@@ -4,6 +4,7 @@
 
   const ID = 'mundo-criadores-video';
   const VIDEO = '1236570278';
+  const LINK = 'https://linkhubtree.lovable.app/performance';
   const initialized = new WeakSet();
 
   function setup() {
@@ -22,52 +23,81 @@
     dialog.style.setProperty('max-width', '1600px', 'important');
     dialog.style.setProperty('margin', '1vh auto', 'important');
 
-    body.style.setProperty('padding', '8px', 'important');
+    body.style.setProperty('padding', '8px 12px', 'important');
     body.style.setProperty('overflow', 'hidden', 'important');
     body.style.setProperty('max-height', 'none', 'important');
     body.style.setProperty('display', 'flex', 'important');
-    body.style.setProperty('justify-content', 'center', 'important');
+    body.style.setProperty('flex-direction', 'column', 'important');
     body.style.setProperty('align-items', 'center', 'important');
+    body.style.setProperty('justify-content', 'center', 'important');
+    body.style.setProperty('gap', '10px', 'important');
 
     if (!initialized.has(body)) {
-      // Remove o conteudo visual original do aviso,
-      // incluindo o espaco reservado para o sino.
       body.replaceChildren();
 
-      const container = document.createElement('div');
-      container.id = 'mc-player';
-      container.style.cssText =
-        'width:100%;display:flex;justify-content:center;align-items:center;';
+      const player = document.createElement('div');
+      player.id = 'mc-player';
+      player.style.cssText = 'flex:0 0 auto;max-width:100%;';
 
       const iframe = document.createElement('iframe');
-      iframe.src =
-        'https://player.vimeo.com/video/' + VIDEO +
+      iframe.src = 'https://player.vimeo.com/video/' + VIDEO +
         '?title=0&byline=0&portrait=0';
-
       iframe.title = 'Movimento Mundo de Criadores';
       iframe.allow = 'autoplay;fullscreen;picture-in-picture';
       iframe.allowFullscreen = true;
       iframe.style.cssText =
         'display:block;border:0;width:100%;height:100%;';
 
-      container.appendChild(iframe);
-      body.appendChild(container);
+      player.appendChild(iframe);
+
+      const cta = document.createElement('div');
+      cta.id = 'mc-cta';
+      cta.style.cssText =
+        'width:100%;text-align:center;display:flex;' +
+        'flex-direction:column;align-items:center;gap:9px;';
+
+      const message = document.createElement('p');
+      message.textContent =
+        'Descubra como o Movimento Mundo de Criadores pode ajudar sua escola a conquistar mais matrículas e aumentar o faturamento!';
+      message.style.cssText =
+        'margin:0;color:#001f3b;font-family:Arial,sans-serif;' +
+        'font-size:clamp(14px,1.3vw,19px);font-weight:700;' +
+        'line-height:1.35;';
+
+      const button = document.createElement('a');
+      button.href = LINK;
+      button.target = '_blank';
+      button.rel = 'noopener noreferrer';
+      button.textContent = 'FALE COM SEU CONSULTOR';
+      button.style.cssText =
+        'display:inline-block;background:#007edf;color:#fff;' +
+        'font-family:Arial,sans-serif;font-size:15px;' +
+        'font-weight:700;text-decoration:none;' +
+        'padding:12px 28px;border-radius:8px;' +
+        'box-shadow:0 3px 10px rgba(0,126,223,.2);';
+
+      cta.appendChild(message);
+      cta.appendChild(button);
+      body.appendChild(player);
+      body.appendChild(cta);
 
       initialized.add(body);
     }
 
     const player = body.querySelector('#mc-player');
-    if (!player) return;
+    const cta = body.querySelector('#mc-cta');
+    if (!player || !cta) return;
 
-    // Calcula o maior tamanho 16:9 que cabe na janela.
     const maxWidth = Math.min(
       dialog.clientWidth - 24,
       window.innerWidth * 0.94
     );
 
+    // Reserva altura para texto, botao e espacamentos.
+    const ctaHeight = cta.getBoundingClientRect().height;
     const maxHeight = Math.max(
-      200,
-      window.innerHeight - 180
+      160,
+      window.innerHeight - 180 - ctaHeight - 14
     );
 
     const width = Math.min(maxWidth, maxHeight * 16 / 9);
@@ -83,8 +113,6 @@
       Math.floor(width * 9 / 16) + 'px',
       'important'
     );
-
-    player.style.setProperty('flex', '0 0 auto', 'important');
   }
 
   function start() {
