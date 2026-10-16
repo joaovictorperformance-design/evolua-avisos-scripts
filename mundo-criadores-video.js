@@ -89,8 +89,8 @@
     if (!player || !cta) return;
 
     const maxWidth = Math.min(
-      dialog.clientWidth - 24,
-      window.innerWidth * 0.94
+      window.innerWidth * 0.90,
+      1500
     );
 
     // Reserva altura para texto, botao e espacamentos.
