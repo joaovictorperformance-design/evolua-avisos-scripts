@@ -1,100 +1,98 @@
 
-/* Aviso ENTER - Movimento Mundo de Criadores (Vimeo corporativo) */
 (function () {
   'use strict';
-  var MARKER = 'mundo-criadores-video';
-  var VIDEO = '1236570278';
-  var STYLE_ID = 'mundo-criadores-video-style';
-  var busy = false;
 
-  function installStyle() {
-    if (document.getElementById(STYLE_ID)) return;
-    var css = '.mc-video-shell{width:100%!important;max-width:none!important;margin:0 auto!important;display:flex;justify-content:center;align-items:center;box-sizing:border-box}' +
-      '.mc-video-frame{width:100%;position:relative;background:#001f3b;overflow:hidden;aspect-ratio:16/9}' +
-      '.mc-video-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}';
-    var el = document.createElement('style');
-    el.id = STYLE_ID;
-    el.textContent = css;
-    document.head.appendChild(el);
-  }
+  const ID = 'mundo-criadores-video';
+  const VIDEO = '1236570278';
+  const initialized = new WeakSet();
 
-  function findModal(marker) {
-    return marker.closest('.modal') || marker.closest('[role="dialog"]');
-  }
+  function setup() {
+    const marker = document.getElementById(ID);
+    if (!marker) return;
 
-  function update() {
-    if (busy) return;
-    busy = true;
-    try {
-      var marker = document.getElementById(MARKER);
-      if (!marker) return;
-      var modal = findModal(marker);
-      if (!modal) return;
-      var dialog = modal.querySelector('.modal-dialog') || modal;
-      var body = marker.closest('.modal-body') || modal.querySelector('.modal-body');
-      if (!body) return;
-      installStyle();
+    const modal = marker.closest('.modal');
+    if (!modal) return;
 
-      // Oculta a capa padrao, preservando cabecalho e rodape.
-      var images = body.querySelectorAll('img');
-      for (var i = 0; i < images.length; i++) {
-        if (!images[i].closest('.mc-video-shell')) {
-          images[i].style.setProperty('display', 'none', 'important');
-        }
-      }
+    const dialog = modal.querySelector('.modal-dialog');
+    const body = marker.closest('.modal-body');
 
-      dialog.style.setProperty('width', '96vw', 'important');
-      dialog.style.setProperty('max-width', '1600px', 'important');
-      dialog.style.setProperty('margin', '1vh auto', 'important');
+    if (!dialog || !body) return;
 
-      body.style.setProperty('padding', '8px 12px', 'important');
-      body.style.setProperty('overflow-y', 'auto', 'important');
-      body.style.setProperty('max-height', 'calc(98vh - 140px)', 'important');
+    dialog.style.setProperty('width', '96vw', 'important');
+    dialog.style.setProperty('max-width', '1600px', 'important');
+    dialog.style.setProperty('margin', '1vh auto', 'important');
 
-      var shell = body.querySelector('.mc-video-shell');
+    body.style.setProperty('padding', '8px', 'important');
+    body.style.setProperty('overflow', 'hidden', 'important');
+    body.style.setProperty('max-height', 'none', 'important');
+    body.style.setProperty('display', 'flex', 'important');
+    body.style.setProperty('justify-content', 'center', 'important');
+    body.style.setProperty('align-items', 'center', 'important');
 
-      if (!shell) {
-        shell = document.createElement('div');
-        shell.className = 'mc-video-shell';
+    if (!initialized.has(body)) {
+      // Remove o conteudo visual original do aviso,
+      // incluindo o espaco reservado para o sino.
+      body.replaceChildren();
 
-        var frame = document.createElement('div');
-        frame.className = 'mc-video-frame';
+      const container = document.createElement('div');
+      container.id = 'mc-player';
+      container.style.cssText =
+        'width:100%;display:flex;justify-content:center;align-items:center;';
 
-        var iframe = document.createElement('iframe');
-        iframe.src = 'https://player.vimeo.com/video/' + VIDEO +
-          '?title=0&byline=0&portrait=0';
+      const iframe = document.createElement('iframe');
+      iframe.src =
+        'https://player.vimeo.com/video/' + VIDEO +
+        '?title=0&byline=0&portrait=0';
 
-        iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
-        iframe.setAttribute('allowfullscreen', '');
-        iframe.setAttribute('title', 'Movimento Mundo de Criadores');
-        iframe.setAttribute('loading', 'eager');
+      iframe.title = 'Movimento Mundo de Criadores';
+      iframe.allow = 'autoplay;fullscreen;picture-in-picture';
+      iframe.allowFullscreen = true;
+      iframe.style.cssText =
+        'display:block;border:0;width:100%;height:100%;';
 
-        frame.appendChild(iframe);
-        shell.appendChild(frame);
-        marker.parentNode.insertBefore(shell, marker.nextSibling);
-      }
+      container.appendChild(iframe);
+      body.appendChild(container);
 
-      // Ajusta o video em 16:9 conforme largura e altura disponiveis.
-      var frameEl = shell.querySelector('.mc-video-frame');
-      var widthAvailable = Math.max(240, body.clientWidth - 24);
-      var heightAvailable = Math.max(180, window.innerHeight * 0.98 - 150);
-      var width = Math.min(widthAvailable, heightAvailable * 16 / 9);
-
-      frameEl.style.setProperty('width', Math.floor(width) + 'px', 'important');
-      frameEl.style.setProperty('height', Math.floor(width * 9 / 16) + 'px', 'important');
-      frameEl.style.setProperty('flex', '0 0 auto', 'important');
-    } finally {
-      busy = false;
+      initialized.add(body);
     }
+
+    const player = body.querySelector('#mc-player');
+    if (!player) return;
+
+    // Calcula o maior tamanho 16:9 que cabe na janela.
+    const maxWidth = Math.min(
+      dialog.clientWidth - 24,
+      window.innerWidth * 0.94
+    );
+
+    const maxHeight = Math.max(
+      200,
+      window.innerHeight - 180
+    );
+
+    const width = Math.min(maxWidth, maxHeight * 16 / 9);
+
+    player.style.setProperty(
+      'width',
+      Math.floor(width) + 'px',
+      'important'
+    );
+
+    player.style.setProperty(
+      'height',
+      Math.floor(width * 9 / 16) + 'px',
+      'important'
+    );
+
+    player.style.setProperty('flex', '0 0 auto', 'important');
   }
 
   function start() {
-    update();
-    window.addEventListener('resize', update);
+    setup();
+    window.addEventListener('resize', setup);
 
-    var observer = new MutationObserver(function () {
-      if (!document.getElementById(MARKER)) return;
-      update();
+    const observer = new MutationObserver(function () {
+      if (document.getElementById(ID)) setup();
     });
 
     observer.observe(document.body, {
