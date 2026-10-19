@@ -58,7 +58,7 @@
 
       const message = document.createElement('p');
       message.textContent =
-        'Descubra como a Plataform E-GAMES pode ajudar sua escola a conquistar mais matrículas e aumentar o faturamento!';
+        'Descubra como a Plataforma E-GAMES pode ajudar sua escola a conquistar mais matrículas e aumentar o faturamento!';
       message.style.cssText =
         'margin:0;color:#001f3b;font-family:Arial,sans-serif;' +
         'font-size:clamp(14px,1.3vw,19px);font-weight:700;' +
