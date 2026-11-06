@@ -2,188 +2,136 @@
 (() => {
   "use strict";
 
-  // ==========================================
+  // ============================================
   // BLACK FRIDAY EVOLUA - ENTER + LOVABLE
-  // Identificacao automatica por polo
-  // ==========================================
+  // Imagem clicavel + botao pulsante
+  // Identificacao automatica do polo via Axios
+  // ============================================
 
-  if (location.pathname.toLowerCase() !== "/inicio/painel") return;
+  if (location.pathname.toLowerCase() !== "/inicio/painel") {
+    return;
+  }
 
-  if (window.__evoluaBlackFridayLoaded) return;
-  window.__evoluaBlackFridayLoaded = true;
+  if (window.__evoluaBFUrlInitialized) return;
+  window.__evoluaBFUrlInitialized = true;
 
-  const CONFIG = {
-    markerId: "evolua-black-friday",
+  const C = {
+    marker: "evolua-black-friday",
+    destino: "https://evolua-friday.lovable.app/",
     tokenPath: "/Configuracoes/TokenPolo",
-
-    postUrl:
-      "https://evolua-friday.lovable.app/api/public/enter/identificar",
-
-    fallbackUrl:
-      "https://evolua-friday.lovable.app/",
-
-    buttonText: "CLIQUE AQUI E GANHE BENEFÍCIOS",
-
-    timeoutMs: 6000
+    textoBotao: "🎁 DESBLOQUEAR MEU BENEFÍCIO",
+    timeout: 8000
   };
 
   const initialized = new WeakSet();
   let observer = null;
   let poloPromise = null;
 
-  // ==========================================
-  // IDENTIFICACAO DO POLO
-  // ==========================================
+  // ============================================
+  // IDENTIFICACAO DO POLO COM AXIOS
+  // ============================================
 
-  async function getPoloCode() {
+  async function obterPolo() {
     if (!poloPromise) {
       poloPromise = (async () => {
-        const controller = new AbortController();
+        if (!window.axios) {
+          throw new Error("Axios indisponivel no ENTER");
+        }
 
-        const timeout = setTimeout(
-          () => controller.abort(),
-          CONFIG.timeoutMs
+        const resposta = await window.axios.get(
+          C.tokenPath,
+          {
+            timeout: C.timeout
+          }
         );
 
-        try {
-          const response = await fetch(CONFIG.tokenPath, {
-            method: "GET",
-            credentials: "same-origin",
-            cache: "no-store",
-            signal: controller.signal
-          });
+        const doc = new DOMParser().parseFromString(
+          String(resposta.data || ""),
+          "text/html"
+        );
 
-          if (!response.ok) {
-            throw new Error(
-              "Consulta do polo: HTTP " + response.status
-            );
-          }
+        const seletores = [
+          "#inputCodigo",
+          "#CodigoPolo",
+          '[name="CodigoPolo"]',
+          '[name="CodigoExterno"]',
+          '[name="CodigoExternoPolo"]'
+        ];
 
-          const html = await response.text();
+        for (const seletor of seletores) {
+          const el = doc.querySelector(seletor);
 
-          const doc = new DOMParser().parseFromString(
-            html,
-            "text/html"
+          if (!el) continue;
+
+          const valor = String(
+            el.value ||
+            el.getAttribute("value") ||
+            el.textContent ||
+            ""
           );
 
-          const selectors = [
-            "#inputCodigo",
-            "#CodigoPolo",
-            '[name="CodigoPolo"]',
-            '[name="CodigoExterno"]',
-            '[name="CodigoExternoPolo"]'
-          ];
+          const digitos = valor.replace(/\D/g, "");
 
-          for (const selector of selectors) {
-            const field = doc.querySelector(selector);
-
-            if (!field) continue;
-
-            const raw =
-              field.value ||
-              field.getAttribute("value") ||
-              field.textContent ||
-              "";
-
-            const digits = String(raw).replace(/\D/g, "");
-
-            if (digits.length >= 1 && digits.length <= 6) {
-              return digits.padStart(6, "0");
-            }
+          if (digitos && digitos.length <= 6) {
+            return digitos.padStart(6, "0");
           }
-
-          throw new Error(
-            "Codigo comercial do polo nao encontrado na resposta"
-          );
-
-        } finally {
-          clearTimeout(timeout);
         }
-      })().catch(error => {
+
+        throw new Error("Codigo comercial do polo nao encontrado");
+      })().catch(erro => {
         poloPromise = null;
-        throw error;
+        throw erro;
       });
     }
 
     return poloPromise;
   }
 
-  // ==========================================
-  // ENVIO DO POLO PARA O LOVABLE
-  // ==========================================
+  // ============================================
+  // REDIRECIONAMENTO PARA O LOVABLE
+  // ============================================
 
-  function enviarPolo(polo) {
+  function abrirRoleta(polo) {
     if (!/^\d{6}$/.test(polo)) {
       throw new Error("Codigo de polo invalido");
     }
 
-    const form = document.createElement("form");
+    const url = new URL(C.destino);
 
-    form.method = "POST";
-    form.action = CONFIG.postUrl;
-    form.enctype = "application/x-www-form-urlencoded";
-    form.target = "_self";
-    form.style.display = "none";
+    // O Lovable identifica o polo por este parametro.
+    url.searchParams.set("polo", polo);
 
-    const input = document.createElement("input");
+    console.info(
+      "[Evolua BF] Abrindo roleta para o polo:",
+      polo
+    );
 
-    input.type = "hidden";
-    input.name = "polo_code";
-    input.value = polo;
-
-    form.appendChild(input);
-    document.body.appendChild(form);
-
-    // Navegacao por POST sem depender de CORS.
-    HTMLFormElement.prototype.submit.call(form);
+    // Navegacao direta: sem POST externo e sem CORS.
+    window.location.assign(url.toString());
   }
 
-  // ==========================================
-  // ESTILO DO BOTAO PULSANTE
-  // ==========================================
+  // ============================================
+  // ESTILOS DO AVISO
+  // ============================================
 
-  if (!document.getElementById("evolua-bf-styles")) {
+  if (!document.getElementById("evolua-bf-estilos")) {
     const style = document.createElement("style");
-    style.id = "evolua-bf-styles";
+    style.id = "evolua-bf-estilos";
 
     style.textContent = `
       @keyframes evoluaBFPulse {
         0%, 100% {
           transform: scale(1);
-          box-shadow: 0 0 0 0 rgba(210,30,30,.5);
+          box-shadow: 0 0 0 0 rgba(210, 30, 30, .50);
         }
-        65% {
+
+        60% {
           transform: scale(1.035);
-          box-shadow: 0 0 0 15px rgba(210,30,30,0);
+          box-shadow: 0 0 0 15px rgba(210, 30, 30, 0);
         }
       }
 
-      .evolua-bf-cta {
-        display: block;
-        max-width: 95%;
-        margin: 15px auto;
-        padding: 16px 28px;
-        border: 2px solid #f4c55d;
-        border-radius: 12px;
-        background: linear-gradient(135deg,#e32828,#a50c16);
-        color: white;
-        font: 800 17px Arial,sans-serif;
-        cursor: pointer;
-        animation: evoluaBFPulse 1.8s infinite;
-      }
-
-      .evolua-bf-cta:disabled {
-        opacity: .7;
-        cursor: wait;
-        animation: none;
-      }
-
-      .evolua-bf-cta:focus-visible {
-        outline: 3px solid #f4c55d;
-        outline-offset: 3px;
-      }
-
-      .evolua-bf-image {
+      .evolua-bf-img {
         display: block;
         width: 100%;
         height: auto;
@@ -191,21 +139,79 @@
         object-fit: contain;
         border-radius: 8px;
         cursor: pointer;
+        transition: transform .22s ease, filter .22s ease;
       }
 
-      @media(max-width:600px) {
-        .evolua-bf-cta {
+      .evolua-bf-img:hover {
+        transform: scale(1.012);
+        filter: brightness(1.06);
+      }
+
+      .evolua-bf-img:focus-visible {
+        outline: 3px solid #f5cc66;
+        outline-offset: 4px;
+      }
+
+      .evolua-bf-btn {
+        display: block;
+        max-width: 95%;
+        margin: 15px auto 8px;
+        padding: 16px 28px;
+        border: 2px solid #f5cc66;
+        border-radius: 12px;
+        background: linear-gradient(
+          135deg,
+          #e32828,
+          #a50c16
+        );
+        color: #ffffff;
+        font: 800 17px Arial, sans-serif;
+        text-align: center;
+        cursor: pointer;
+        animation: evoluaBFPulse 1.8s infinite;
+        transition: filter .2s ease;
+      }
+
+      .evolua-bf-btn:hover {
+        filter: brightness(1.12);
+      }
+
+      .evolua-bf-btn:disabled {
+        opacity: .7;
+        cursor: wait;
+        animation: none;
+      }
+
+      .evolua-bf-btn:focus-visible {
+        outline: 3px solid #f5cc66;
+        outline-offset: 4px;
+      }
+
+      .evolua-bf-status {
+        margin: 8px auto;
+        color: #333333;
+        font: 14px Arial, sans-serif;
+        line-height: 1.4;
+      }
+
+      @media (max-width: 600px) {
+        .evolua-bf-img {
+          max-height: 52vh;
+        }
+
+        .evolua-bf-btn {
           font-size: 14px;
           padding: 13px 18px;
         }
-        .evolua-bf-image {
-          max-height: 55vh;
-        }
       }
 
-      @media(prefers-reduced-motion:reduce) {
-        .evolua-bf-cta {
+      @media (prefers-reduced-motion: reduce) {
+        .evolua-bf-btn {
           animation: none;
+        }
+
+        .evolua-bf-img {
+          transition: none;
         }
       }
     `;
@@ -213,26 +219,33 @@
     document.head.appendChild(style);
   }
 
-  // ==========================================
-  // CONSTRUCAO DO AVISO
-  // ==========================================
+  // ============================================
+  // CONSTRUCAO DO AVISO NO ENTER
+  // ============================================
 
-  function initMarker(marker) {
+  function iniciar(marker) {
     const modal = marker.closest(".modal-content");
     const body = modal?.querySelector(".modal-body");
 
     if (!modal || !body) return false;
     if (initialized.has(body)) return true;
 
+    // Captura a imagem cadastrada no aviso.
     const original = [...body.querySelectorAll("img")]
       .find(img => img.getAttribute("src"));
 
     const src = original?.currentSrc || original?.src;
 
-    if (!src) return false;
+    if (!src) {
+      console.warn(
+        "[Evolua BF] Nenhuma imagem encontrada no aviso."
+      );
+      return false;
+    }
 
     initialized.add(body);
 
+    // Expande o modal para exibir a arte completa.
     const dialog = modal.closest(".modal-dialog");
 
     if (dialog) {
@@ -259,56 +272,77 @@
       overflow: "auto",
       height: "auto",
       "max-height": "calc(100vh - 150px)"
-    }).forEach(([key, value]) => {
-      body.style.setProperty(key, value, "important");
+    }).forEach(([chave, valor]) => {
+      body.style.setProperty(
+        chave,
+        valor,
+        "important"
+      );
     });
 
-    const wrapper = document.createElement("div");
+    const wrap = document.createElement("div");
 
-    wrapper.style.cssText =
-      "max-width:1200px;margin:0 auto;" +
-      "text-align:center;font-family:Arial,sans-serif;";
+    wrap.style.cssText =
+      "width:100%;" +
+      "max-width:1200px;" +
+      "margin:0 auto;" +
+      "text-align:center;" +
+      "font-family:Arial,sans-serif;";
+
+    // ============================================
+    // IMAGEM DA ROLETA CLICAVEL
+    // ============================================
 
     const image = document.createElement("img");
 
     image.src = src;
-    image.alt = "Black Friday Evolua";
-    image.className = "evolua-bf-image";
+    image.alt = "Clique na roleta para desbloquear seu benefício";
+    image.title = "Participar da Black Friday Evolua";
+    image.className = "evolua-bf-img";
+
     image.tabIndex = 0;
     image.setAttribute("role", "button");
+    image.setAttribute(
+      "aria-label",
+      "Participar da roleta Black Friday Evolua"
+    );
+
+    // ============================================
+    // BOTAO PULSANTE
+    // ============================================
 
     const button = document.createElement("button");
 
     button.type = "button";
-    button.className = "evolua-bf-cta";
-    button.textContent = CONFIG.buttonText;
+    button.className = "evolua-bf-btn";
+    button.textContent = C.textoBotao;
+
+    // ============================================
+    // MENSAGENS DE STATUS
+    // ============================================
 
     const status = document.createElement("p");
 
+    status.className = "evolua-bf-status";
     status.setAttribute("role", "status");
-    status.style.cssText =
-      "color:#333;font:14px Arial,sans-serif;" +
-      "margin:8px auto;";
 
     let busy = false;
-    let fallback = false;
+
+    // ============================================
+    // PARTICIPACAO E REDIRECIONAMENTO
+    // ============================================
 
     async function participar() {
       if (busy) return;
 
-      if (fallback) {
-        location.assign(CONFIG.fallbackUrl);
-        return;
-      }
-
       busy = true;
       button.disabled = true;
-
-      button.textContent = "IDENTIFICANDO SUA ESCOLA...";
+      button.textContent = "PREPARANDO SUA ROLETA...";
       status.textContent = "";
 
       try {
-        const polo = await getPoloCode();
+        // Captura o polo apenas depois do clique.
+        const polo = await obterPolo();
 
         console.info(
           "[Evolua BF] Polo identificado:",
@@ -317,72 +351,77 @@
 
         button.textContent = "ABRINDO SUA ROLETA...";
 
-        enviarPolo(polo);
+        abrirRoleta(polo);
 
-      } catch (error) {
+      } catch (erro) {
         console.warn(
-          "[Evolua BF] Falha ao identificar polo:",
-          error
+          "[Evolua BF] Falha na identificacao:",
+          erro
         );
 
         status.textContent =
-          "Não foi possível identificar sua escola automaticamente.";
+          "Não foi possível identificar sua escola. " +
+          "Tente novamente.";
 
-        button.textContent = "ACESSAR COM CÓDIGO DO POLO";
+        button.textContent = C.textoBotao;
         button.disabled = false;
-
-        fallback = true;
         busy = false;
       }
     }
 
+    // Clique em qualquer parte da imagem.
     image.addEventListener("click", participar);
 
-    image.addEventListener("keydown", event => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
+    // Acessibilidade via teclado.
+    image.addEventListener("keydown", evento => {
+      if (
+        evento.key === "Enter" ||
+        evento.key === " "
+      ) {
+        evento.preventDefault();
         participar();
       }
     });
 
+    // Clique no botao pulsante.
     button.addEventListener("click", participar);
 
     marker.style.display = "none";
 
-    wrapper.append(image, button, status);
-    body.replaceChildren(marker, wrapper);
+    // Remove a imagem original e recria sem cortes.
+    wrap.append(image, button, status);
+    body.replaceChildren(marker, wrap);
 
-    console.info("[Evolua BF] Aviso inicializado");
+    console.info(
+      "[Evolua BF] Aviso inicializado com imagem clicavel"
+    );
 
     return true;
   }
 
-  // ==========================================
-  // MONITORAMENTO DO MODAL
-  // ==========================================
+  // ============================================
+  // AGUARDAR O AVISO APARECER NO ENTER
+  // ============================================
 
-  function scan() {
-    const marker = document.getElementById(
-      CONFIG.markerId
-    );
+  function verificar() {
+    const marker = document.getElementById(C.marker);
 
-    if (marker && initMarker(marker)) {
+    if (marker && iniciar(marker)) {
       observer?.disconnect();
     }
   }
 
-  scan();
+  verificar();
 
-  if (!document.getElementById(CONFIG.markerId)) {
-    observer = new MutationObserver(scan);
+  observer = new MutationObserver(verificar);
 
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true
-    });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
 
-    setTimeout(() => {
-      observer?.disconnect();
-    }, 30000);
-  }
+  setTimeout(() => {
+    observer?.disconnect();
+  }, 30000);
+
 })();
