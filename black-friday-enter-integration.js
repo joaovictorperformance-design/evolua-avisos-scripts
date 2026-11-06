@@ -2,51 +2,43 @@
 (() => {
   "use strict";
 
-  // ============================================
-  // BLACK FRIDAY EVOLUA - ENTER + LOVABLE
-  // Imagem clicavel + botao pulsante
-  // Identificacao automatica do polo via Axios
-  // ============================================
+  // ========================================
+  // BLACK FRIDAY EVOLUA - AVISO PREMIUM
+  // ENTER + LOVABLE
+  // ========================================
 
-  if (location.pathname.toLowerCase() !== "/inicio/painel") {
-    return;
-  }
-
-  if (window.__evoluaBFUrlInitialized) return;
-  window.__evoluaBFUrlInitialized = true;
+  if (location.pathname.toLowerCase() !== "/inicio/painel") return;
+  if (window.__evoluaBFPremiumLoaded) return;
+  window.__evoluaBFPremiumLoaded = true;
 
   const C = {
     marker: "evolua-black-friday",
     destino: "https://evolua-friday.lovable.app/",
     tokenPath: "/Configuracoes/TokenPolo",
-    textoBotao: "🎁 DESBLOQUEAR MEU BENEFÍCIO",
     timeout: 8000
   };
 
-  const initialized = new WeakSet();
   let observer = null;
   let poloPromise = null;
+  const initialized = new WeakSet();
 
-  // ============================================
-  // IDENTIFICACAO DO POLO COM AXIOS
-  // ============================================
+  // ========================================
+  // CAPTURA DO POLO - METODO VALIDADO
+  // ========================================
 
   async function obterPolo() {
     if (!poloPromise) {
       poloPromise = (async () => {
         if (!window.axios) {
-          throw new Error("Axios indisponivel no ENTER");
+          throw new Error("Axios indisponivel");
         }
 
-        const resposta = await window.axios.get(
-          C.tokenPath,
-          {
-            timeout: C.timeout
-          }
-        );
+        const r = await window.axios.get(C.tokenPath, {
+          timeout: C.timeout
+        });
 
         const doc = new DOMParser().parseFromString(
-          String(resposta.data || ""),
+          String(r.data || ""),
           "text/html"
         );
 
@@ -60,7 +52,6 @@
 
         for (const seletor of seletores) {
           const el = doc.querySelector(seletor);
-
           if (!el) continue;
 
           const valor = String(
@@ -77,7 +68,7 @@
           }
         }
 
-        throw new Error("Codigo comercial do polo nao encontrado");
+        throw new Error("Polo nao encontrado");
       })().catch(erro => {
         poloPromise = null;
         throw erro;
@@ -87,130 +78,293 @@
     return poloPromise;
   }
 
-  // ============================================
-  // REDIRECIONAMENTO PARA O LOVABLE
-  // ============================================
-
   function abrirRoleta(polo) {
     if (!/^\d{6}$/.test(polo)) {
-      throw new Error("Codigo de polo invalido");
+      throw new Error("Codigo do polo invalido");
     }
 
     const url = new URL(C.destino);
-
-    // O Lovable identifica o polo por este parametro.
     url.searchParams.set("polo", polo);
 
-    console.info(
-      "[Evolua BF] Abrindo roleta para o polo:",
-      polo
-    );
-
-    // Navegacao direta: sem POST externo e sem CORS.
     window.location.assign(url.toString());
   }
 
-  // ============================================
-  // ESTILOS DO AVISO
-  // ============================================
+  // ========================================
+  // ESTILOS VISUAIS
+  // ========================================
 
-  if (!document.getElementById("evolua-bf-estilos")) {
+  if (!document.getElementById("evolua-bf-premium-css")) {
     const style = document.createElement("style");
-    style.id = "evolua-bf-estilos";
+    style.id = "evolua-bf-premium-css";
 
     style.textContent = `
-      @keyframes evoluaBFPulse {
-        0%, 100% {
-          transform: scale(1);
-          box-shadow: 0 0 0 0 rgba(210, 30, 30, .50);
-        }
-
-        60% {
-          transform: scale(1.035);
-          box-shadow: 0 0 0 15px rgba(210, 30, 30, 0);
-        }
+      .ebf-card, .ebf-card * {
+        box-sizing: border-box;
       }
 
-      .evolua-bf-img {
-        display: block;
+      .ebf-card {
+        position: relative;
         width: 100%;
-        height: auto;
-        max-height: 65vh;
-        object-fit: contain;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: transform .22s ease, filter .22s ease;
+        max-width: 1200px;
+        margin: auto;
+        overflow: hidden;
+        border-radius: 20px;
+        border: 1px solid #b78a43;
+        background:
+          radial-gradient(
+            ellipse at 77% 50%,
+            rgba(189, 48, 25, .32),
+            transparent 55%
+          ),
+          linear-gradient(
+            125deg,
+            #110d12 0%,
+            #251015 55%,
+            #110c10 100%
+          );
+        color: #fff;
+        font-family: Arial, sans-serif;
+        box-shadow: 0 15px 40px rgba(0,0,0,.16);
       }
 
-      .evolua-bf-img:hover {
-        transform: scale(1.012);
-        filter: brightness(1.06);
+      .ebf-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 16px 24px;
+        border-bottom: 1px solid rgba(229,181,86,.2);
       }
 
-      .evolua-bf-img:focus-visible {
-        outline: 3px solid #f5cc66;
-        outline-offset: 4px;
+      .ebf-tag {
+        display: inline-block;
+        border: 1px solid #dcaa52;
+        border-radius: 30px;
+        padding: 7px 13px;
+        background: rgba(228,178,77,.1);
+        color: #f1c76c;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 2px;
       }
 
-      .evolua-bf-btn {
-        display: block;
-        max-width: 95%;
-        margin: 15px auto 8px;
-        padding: 16px 28px;
-        border: 2px solid #f5cc66;
+      .ebf-exclusive {
+        color: #dfbe83;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+      }
+
+      .ebf-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        gap: 20px;
+        padding: 20px 35px 24px;
+      }
+
+      .ebf-copy {
+        text-align: left;
+      }
+
+      .ebf-kicker {
+        margin: 0 0 12px;
+        color: #edba56;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 4px;
+      }
+
+      .ebf-title {
+        margin: 0;
+        color: #fff;
+        font-size: clamp(29px, 3.6vw, 52px);
+        line-height: 1.07;
+        font-weight: 900;
+        letter-spacing: -1.2px;
+      }
+
+      .ebf-title span {
+        color: #e7b65b;
+      }
+
+      .ebf-description {
+        max-width: 430px;
+        margin: 17px 0 20px;
+        color: #e0cbd0;
+        font-size: clamp(13px, 1.25vw, 16px);
+        line-height: 1.6;
+      }
+
+      .ebf-cta {
+        width: 100%;
+        max-width: 390px;
+        min-height: 59px;
+        padding: 14px 22px;
+        border: 2px solid #f4d080;
         border-radius: 12px;
         background: linear-gradient(
-          135deg,
-          #e32828,
-          #a50c16
+          135deg, #f5d27f, #dba33a
         );
-        color: #ffffff;
-        font: 800 17px Arial, sans-serif;
-        text-align: center;
+        color: #211008;
+        font: 900 16px Arial, sans-serif;
         cursor: pointer;
-        animation: evoluaBFPulse 1.8s infinite;
-        transition: filter .2s ease;
+        animation: ebf-pulse 1.8s infinite;
       }
 
-      .evolua-bf-btn:hover {
-        filter: brightness(1.12);
+      .ebf-cta:hover {
+        filter: brightness(1.1);
       }
 
-      .evolua-bf-btn:disabled {
-        opacity: .7;
+      .ebf-cta:disabled {
+        opacity: .75;
         cursor: wait;
         animation: none;
       }
 
-      .evolua-bf-btn:focus-visible {
-        outline: 3px solid #f5cc66;
+      .ebf-cta:focus-visible,
+      .ebf-wheel-button:focus-visible {
+        outline: 3px solid white;
         outline-offset: 4px;
       }
 
-      .evolua-bf-status {
-        margin: 8px auto;
-        color: #333333;
-        font: 14px Arial, sans-serif;
-        line-height: 1.4;
+      .ebf-status {
+        margin: 12px 0 0;
+        color: #f6d38d;
+        font-size: 13px;
       }
 
-      @media (max-width: 600px) {
-        .evolua-bf-img {
-          max-height: 52vh;
+      .ebf-note {
+        margin: 15px 0 0;
+        color: #aa9295;
+        font-size: 12px;
+      }
+
+      .ebf-wheel-zone {
+        position: relative;
+        width: min(100%, 440px);
+        margin: auto;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .ebf-wheel-glow {
+        position: absolute;
+        inset: 12%;
+        border-radius: 50%;
+        background: #ed8c29;
+        filter: blur(44px);
+        opacity: .27;
+        pointer-events: none;
+      }
+
+      .ebf-wheel-button {
+        position: relative;
+        display: block;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        transition: transform .25s ease;
+      }
+
+      .ebf-wheel-button:hover {
+        transform: scale(1.035);
+      }
+
+      .ebf-wheel-button svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        filter: drop-shadow(
+          0 10px 20px rgba(0,0,0,.35)
+        );
+      }
+
+      .ebf-wheel-face {
+        transform-origin: 200px 200px;
+        animation: ebf-float 5s ease-in-out infinite;
+      }
+
+      .ebf-center {
+        fill: #171319;
+        stroke: #f4c767;
+        stroke-width: 6;
+      }
+
+      .ebf-bottom {
+        padding: 11px 18px;
+        border-top: 1px solid rgba(231,187,90,.2);
+        color: #bba5a3;
+        text-align: center;
+        font-size: 11px;
+        letter-spacing: .5px;
+      }
+
+      @keyframes ebf-pulse {
+        0%, 100% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(233,184,83,.5);
+        }
+        65% {
+          transform: scale(1.025);
+          box-shadow: 0 0 0 13px rgba(233,184,83,0);
+        }
+      }
+
+      @keyframes ebf-float {
+        0%, 100% {
+          transform: rotate(-3deg);
+        }
+        50% {
+          transform: rotate(3deg);
+        }
+      }
+
+      @media (max-width: 720px) {
+        .ebf-top {
+          padding: 12px 16px;
         }
 
-        .evolua-bf-btn {
-          font-size: 14px;
-          padding: 13px 18px;
+        .ebf-layout {
+          grid-template-columns: 1fr;
+          gap: 5px;
+          padding: 18px;
+        }
+
+        .ebf-copy {
+          text-align: center;
+        }
+
+        .ebf-title {
+          font-size: clamp(28px, 7vw, 42px);
+        }
+
+        .ebf-description {
+          margin: 12px auto;
+        }
+
+        .ebf-wheel-zone {
+          max-width: 280px;
+          grid-row: 1;
+        }
+
+        .ebf-cta {
+          max-width: 100%;
         }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .evolua-bf-btn {
+        .ebf-cta,
+        .ebf-wheel-face {
           animation: none;
         }
 
-        .evolua-bf-img {
+        .ebf-wheel-button {
           transition: none;
         }
       }
@@ -219,9 +373,145 @@
     document.head.appendChild(style);
   }
 
-  // ============================================
-  // CONSTRUCAO DO AVISO NO ENTER
-  // ============================================
+  // ========================================
+  // CONSTRUIR ROLETA ILUSTRATIVA EM SVG
+  // ========================================
+
+  function criarRoleta() {
+    const NS = "http://www.w3.org/2000/svg";
+
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 400 400");
+    svg.setAttribute("aria-hidden", "true");
+
+    const grupo = document.createElementNS(NS, "g");
+    grupo.setAttribute("class", "ebf-wheel-face");
+
+    const cores = [
+      "#e32125", "#17171d",
+      "#e6b652", "#b51c25",
+      "#e6b652", "#17171d",
+      "#e32125", "#e6b652"
+    ];
+
+    const rotulos = [
+      "BÔNUS", "SURPRESA", "BRINDE", "EXTRA",
+      "PRÊMIO", "VANTAGEM", "ESPECIAL", "EVOLUA"
+    ];
+
+    function ponto(angulo, raio) {
+      const rad = angulo * Math.PI / 180;
+
+      return {
+        x: 200 + Math.cos(rad) * raio,
+        y: 200 + Math.sin(rad) * raio
+      };
+    }
+
+    for (let i = 0; i < 8; i++) {
+      const a1 = -90 + i * 45;
+      const a2 = a1 + 45;
+
+      const p1 = ponto(a1, 175);
+      const p2 = ponto(a2, 175);
+
+      const setor = document.createElementNS(NS, "path");
+
+      setor.setAttribute(
+        "d",
+        `M200 200 L${p1.x} ${p1.y} ` +
+        `A175 175 0 0 1 ${p2.x} ${p2.y} Z`
+      );
+
+      setor.setAttribute("fill", cores[i]);
+      setor.setAttribute("stroke", "#bd893d");
+      setor.setAttribute("stroke-width", "1.5");
+
+      grupo.appendChild(setor);
+
+      const meio = a1 + 22.5;
+      const pos = ponto(meio, 118);
+
+      const texto = document.createElementNS(NS, "text");
+
+      texto.setAttribute("x", pos.x);
+      texto.setAttribute("y", pos.y);
+      texto.setAttribute("fill",
+        cores[i] === "#e6b652" ? "#18151a" : "#ffffff"
+      );
+      texto.setAttribute("font-size", "13");
+      texto.setAttribute("font-weight", "900");
+      texto.setAttribute("text-anchor", "middle");
+      texto.setAttribute("dominant-baseline", "middle");
+
+      let rotacao = meio + 90;
+      if (rotacao > 90 && rotacao < 270) {
+        rotacao += 180;
+      }
+
+      texto.setAttribute(
+        "transform",
+        `rotate(${rotacao},${pos.x},${pos.y})`
+      );
+
+      texto.textContent = rotulos[i];
+      grupo.appendChild(texto);
+    }
+
+    const borda = document.createElementNS(NS, "circle");
+    borda.setAttribute("cx", "200");
+    borda.setAttribute("cy", "200");
+    borda.setAttribute("r", "184");
+    borda.setAttribute("fill", "none");
+    borda.setAttribute("stroke", "#e4b65c");
+    borda.setAttribute("stroke-width", "13");
+    grupo.appendChild(borda);
+
+    for (let i = 0; i < 24; i++) {
+      const p = ponto(i * 15, 184);
+      const luz = document.createElementNS(NS, "circle");
+
+      luz.setAttribute("cx", p.x);
+      luz.setAttribute("cy", p.y);
+      luz.setAttribute("r", "3.4");
+      luz.setAttribute("fill", "#fff0bd");
+
+      grupo.appendChild(luz);
+    }
+
+    const centro = document.createElementNS(NS, "circle");
+    centro.setAttribute("cx", "200");
+    centro.setAttribute("cy", "200");
+    centro.setAttribute("r", "43");
+    centro.setAttribute("class", "ebf-center");
+    grupo.appendChild(centro);
+
+    const marca = document.createElementNS(NS, "text");
+    marca.setAttribute("x", "200");
+    marca.setAttribute("y", "205");
+    marca.setAttribute("text-anchor", "middle");
+    marca.setAttribute("fill", "#f2cb76");
+    marca.setAttribute("font-size", "17");
+    marca.setAttribute("font-weight", "900");
+    marca.textContent = "EVOLUA";
+    grupo.appendChild(marca);
+
+    svg.appendChild(grupo);
+
+    const seta = document.createElementNS(NS, "path");
+    seta.setAttribute("d", "M184 4 L216 4 L200 48 Z");
+    seta.setAttribute("fill", "#fff0b5");
+    seta.setAttribute("stroke", "#a87b31");
+    seta.setAttribute("stroke-width", "3");
+    seta.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(seta);
+
+    return svg;
+  }
+
+  // ========================================
+  // MONTAR O AVISO
+  // ========================================
 
   function iniciar(marker) {
     const modal = marker.closest(".modal-content");
@@ -230,178 +520,126 @@
     if (!modal || !body) return false;
     if (initialized.has(body)) return true;
 
-    // Captura a imagem cadastrada no aviso.
-    const original = [...body.querySelectorAll("img")]
-      .find(img => img.getAttribute("src"));
-
-    const src = original?.currentSrc || original?.src;
-
-    if (!src) {
-      console.warn(
-        "[Evolua BF] Nenhuma imagem encontrada no aviso."
-      );
-      return false;
-    }
-
     initialized.add(body);
 
-    // Expande o modal para exibir a arte completa.
     const dialog = modal.closest(".modal-dialog");
 
     if (dialog) {
-      dialog.style.setProperty(
-        "width", "94vw", "important"
-      );
-
-      dialog.style.setProperty(
-        "max-width", "1250px", "important"
-      );
-
-      dialog.style.setProperty(
-        "margin", "20px auto", "important"
-      );
+      dialog.style.setProperty("width", "96vw", "important");
+      dialog.style.setProperty("max-width", "1250px", "important");
+      dialog.style.setProperty("margin", "10px auto", "important");
     }
 
-    modal.style.setProperty(
-      "overflow", "visible", "important"
+    body.style.setProperty("padding", "12px", "important");
+    body.style.setProperty("overflow-y", "auto", "important");
+    body.style.setProperty(
+      "max-height",
+      "calc(100dvh - 155px)",
+      "important"
     );
 
-    Object.entries({
-      padding: "12px",
-      margin: "0",
-      overflow: "auto",
-      height: "auto",
-      "max-height": "calc(100vh - 150px)"
-    }).forEach(([chave, valor]) => {
-      body.style.setProperty(
-        chave,
-        valor,
-        "important"
-      );
-    });
+    const card = document.createElement("section");
+    card.className = "ebf-card";
 
-    const wrap = document.createElement("div");
+    // HTML fixo, sem dados externos.
+    card.innerHTML = `
+      <div class="ebf-top">
+        <span class="ebf-tag">BLACK FRIDAY 2026</span>
+        <span class="ebf-exclusive">EXCLUSIVO PARA PARCEIROS</span>
+      </div>
 
-    wrap.style.cssText =
-      "width:100%;" +
-      "max-width:1200px;" +
-      "margin:0 auto;" +
-      "text-align:center;" +
-      "font-family:Arial,sans-serif;";
+      <div class="ebf-layout">
+        <div class="ebf-copy">
+          <p class="ebf-kicker">EVOLUA EDUCAÇÃO</p>
 
-    // ============================================
-    // IMAGEM DA ROLETA CLICAVEL
-    // ============================================
+          <h2 class="ebf-title">
+            SUA SORTE PODE VIRAR
+            <span>BENEFÍCIO!</span>
+          </h2>
 
-    const image = document.createElement("img");
+          <p class="ebf-description">
+            Uma oportunidade especial chegou para sua escola.
+            Descubra o benefício que preparamos para você!
+          </p>
 
-    image.src = src;
-    image.alt = "Clique na roleta para desbloquear seu benefício";
-    image.title = "Participar da Black Friday Evolua";
-    image.className = "evolua-bf-img";
+          <button type="button" class="ebf-cta">
+            DESBLOQUEAR MEU BENEFÍCIO
+          </button>
 
-    image.tabIndex = 0;
-    image.setAttribute("role", "button");
-    image.setAttribute(
-      "aria-label",
-      "Participar da roleta Black Friday Evolua"
-    );
+          <p class="ebf-status" role="status"></p>
 
-    // ============================================
-    // BOTAO PULSANTE
-    // ============================================
+          <p class="ebf-note">
+            Uma participação por escola.
+            O benefício será registrado para seu polo.
+          </p>
+        </div>
 
-    const button = document.createElement("button");
+        <div class="ebf-wheel-zone">
+          <div class="ebf-wheel-glow"></div>
+          <button
+            class="ebf-wheel-button"
+            type="button"
+            aria-label="Participar da Black Friday Evolua"
+            title="Clique para descobrir seu benefício">
+          </button>
+        </div>
+      </div>
 
-    button.type = "button";
-    button.className = "evolua-bf-btn";
-    button.textContent = C.textoBotao;
+      <div class="ebf-bottom">
+        BLACK FRIDAY EVOLUA • BENEFÍCIOS EXCLUSIVOS
+      </div>
+    `;
 
-    // ============================================
-    // MENSAGENS DE STATUS
-    // ============================================
+    const button = card.querySelector(".ebf-cta");
+    const wheelButton = card.querySelector(".ebf-wheel-button");
+    const status = card.querySelector(".ebf-status");
 
-    const status = document.createElement("p");
-
-    status.className = "evolua-bf-status";
-    status.setAttribute("role", "status");
+    wheelButton.appendChild(criarRoleta());
 
     let busy = false;
-
-    // ============================================
-    // PARTICIPACAO E REDIRECIONAMENTO
-    // ============================================
 
     async function participar() {
       if (busy) return;
 
       busy = true;
       button.disabled = true;
-      button.textContent = "PREPARANDO SUA ROLETA...";
+      wheelButton.disabled = true;
+      button.textContent = "IDENTIFICANDO SUA ESCOLA...";
       status.textContent = "";
 
       try {
-        // Captura o polo apenas depois do clique.
         const polo = await obterPolo();
 
-        console.info(
-          "[Evolua BF] Polo identificado:",
-          polo
-        );
-
         button.textContent = "ABRINDO SUA ROLETA...";
-
         abrirRoleta(polo);
 
       } catch (erro) {
-        console.warn(
-          "[Evolua BF] Falha na identificacao:",
-          erro
-        );
+        console.warn("[Evolua BF] Falha:", erro);
 
         status.textContent =
-          "Não foi possível identificar sua escola. " +
+          "Não conseguimos identificar sua escola. " +
           "Tente novamente.";
 
-        button.textContent = C.textoBotao;
         button.disabled = false;
+        wheelButton.disabled = false;
+        button.textContent = "TENTAR NOVAMENTE";
         busy = false;
       }
     }
 
-    // Clique em qualquer parte da imagem.
-    image.addEventListener("click", participar);
-
-    // Acessibilidade via teclado.
-    image.addEventListener("keydown", evento => {
-      if (
-        evento.key === "Enter" ||
-        evento.key === " "
-      ) {
-        evento.preventDefault();
-        participar();
-      }
-    });
-
-    // Clique no botao pulsante.
     button.addEventListener("click", participar);
+    wheelButton.addEventListener("click", participar);
 
     marker.style.display = "none";
+    body.replaceChildren(marker, card);
 
-    // Remove a imagem original e recria sem cortes.
-    wrap.append(image, button, status);
-    body.replaceChildren(marker, wrap);
-
-    console.info(
-      "[Evolua BF] Aviso inicializado com imagem clicavel"
-    );
-
+    console.info("[Evolua BF] Campanha visual carregada");
     return true;
   }
 
-  // ============================================
-  // AGUARDAR O AVISO APARECER NO ENTER
-  // ============================================
+  // ========================================
+  // AGUARDAR O AVISO DO ENTER
+  // ========================================
 
   function verificar() {
     const marker = document.getElementById(C.marker);
@@ -411,17 +649,14 @@
     }
   }
 
-  verificar();
-
   observer = new MutationObserver(verificar);
+
+  verificar();
 
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true
   });
 
-  setTimeout(() => {
-    observer?.disconnect();
-  }, 30000);
-
+  setTimeout(() => observer?.disconnect(), 30000);
 })();
