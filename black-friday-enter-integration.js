@@ -9,8 +9,8 @@
   const CONFIG = {
     markerId: 'evolua-black-friday',
     tokenPath: '/Configuracoes/TokenPolo',
-    postUrl: 'https://evolua-black-friday-hub.lovable.app/api/public/enter/identificar',
-    fallbackUrl: 'https://evolua-black-friday-hub.lovable.app/',
+    postUrl: 'https://evolua-friday.lovable.app/api/public/enter/identificar',
+    fallbackUrl: 'https://evolua-friday.lovable.app/',
   };
 
   const initialized = new WeakSet();
