@@ -1,394 +1,427 @@
-(async()=>{
-  if(location.pathname.toLowerCase()!=="/inicio/painel") return;
 
-  const C={
-    gateway:"https://evolua-trackr.lovable.app/gateway/atualizacao-cadastral-2026",
-    destaque:4724,
-    parametro:"cadastro"
+(() => {
+  "use strict";
+
+  // ============================================
+  // BLACK FRIDAY EVOLUA - ENTER + LOVABLE
+  // Imagem clicavel + botao pulsante
+  // Identificacao automatica do polo via Axios
+  // ============================================
+
+  if (location.pathname.toLowerCase() !== "/inicio/painel") {
+    return;
+  }
+
+  if (window.__evoluaBFUrlInitialized) return;
+  window.__evoluaBFUrlInitialized = true;
+
+  const C = {
+    marker: "evolua-black-friday",
+    destino: "https://evolua-friday.lovable.app/",
+    tokenPath: "/Configuracoes/TokenPolo",
+    textoBotao: "🎁 DESBLOQUEAR MEU BENEFÍCIO",
+    timeout: 8000
   };
 
-  const esperar=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  const initialized = new WeakSet();
+  let observer = null;
+  let poloPromise = null;
 
-  const obterPolo=async()=>{
-    const r=await axios.get("/Configuracoes/TokenPolo");
+  // ============================================
+  // IDENTIFICACAO DO POLO COM AXIOS
+  // ============================================
 
-    const doc=new DOMParser().parseFromString(
-      String(r.data||""),
-      "text/html"
-    );
-
-    const seletores=[
-      "#inputCodigo",
-      "#CodigoPolo",
-      "[name='CodigoPolo']",
-      "[name='CodigoExterno']",
-      "[name='CodigoExternoPolo']"
-    ];
-
-    for(const seletor of seletores){
-      const el=doc.querySelector(seletor);
-
-      const valor=
-        el?.value||
-        el?.getAttribute("value")||
-        el?.textContent||
-        "";
-
-      const digitos=String(valor).replace(/\D/g,"");
-
-      if(digitos&&digitos.length<=6){
-        return digitos.padStart(6,"0");
-      }
-    }
-
-    throw new Error("Código do polo não identificado.");
-  };
-
-  const ocultarAvisoFallback=async()=>{
-    const r=await axios.post(
-      "/Destaque/AddDestaqueVisualizacao",
-      C.destaque,
-      {
-        headers:{
-          "Content-Type":"application/json"
+  async function obterPolo() {
+    if (!poloPromise) {
+      poloPromise = (async () => {
+        if (!window.axios) {
+          throw new Error("Axios indisponivel no ENTER");
         }
-      }
-    );
 
-    const status=
-      Number(r.data?.StatusCode)||
-      Number(r.status);
-
-    if(status!==200){
-      throw new Error(
-        "Falha ao registrar ocultação do aviso."
-      );
-    }
-
-    console.log(
-      "[Evolua Gateway] Aviso ocultado pelo endpoint de fallback."
-    );
-
-    return true;
-  };
-
-  const localizarBotaoNaoMostrar=()=>{
-    const elementos=[
-      ...document.querySelectorAll(
-        "button,a,input,[role='button']"
-      )
-    ];
-
-    return elementos.find(el=>{
-      const texto=String(
-        el.innerText||
-        el.value||
-        el.textContent||
-        ""
-      )
-      .replace(/\s+/g," ")
-      .trim()
-      .toLowerCase();
-
-      return (
-        texto.includes("não mostrar novamente")||
-        texto.includes("nao mostrar novamente")
-      );
-    });
-  };
-
-  const clicarNaoMostrar=async()=>{
-    let botao=localizarBotaoNaoMostrar();
-
-    /*
-      O Enter pode terminar de montar o rodapé do modal
-      alguns milissegundos depois do restante do conteúdo.
-    */
-    if(!botao){
-      await esperar(250);
-      botao=localizarBotaoNaoMostrar();
-    }
-
-    if(!botao){
-      await esperar(500);
-      botao=localizarBotaoNaoMostrar();
-    }
-
-    if(!botao){
-      console.warn(
-        "[Evolua Gateway] Botão 'Não mostrar novamente' não encontrado."
-      );
-
-      return false;
-    }
-
-    console.log(
-      "[Evolua Gateway] Botão nativo encontrado:",
-      botao
-    );
-
-    try{
-      botao.click();
-
-      console.log(
-        "[Evolua Gateway] Clique nativo executado."
-      );
-
-      return true;
-
-    }catch(erro){
-      console.warn(
-        "[Evolua Gateway] Falha no clique nativo:",
-        erro
-      );
-
-      return false;
-    }
-  };
-
-  const limparUrl=()=>{
-    const u=new URL(location.href);
-
-    u.searchParams.delete(C.parametro);
-
-    history.replaceState(
-      {},
-      "",
-      u.pathname+u.search+u.hash
-    );
-  };
-
-  const limparInterface=()=>{
-    try{
-      if(window.jQuery){
-        $(".modal.show").modal("hide");
-        $("#modal-detalhes").modal("hide");
-      }
-    }catch(e){}
-
-    document
-      .querySelectorAll(".modal.show,.modal-backdrop")
-      .forEach(el=>el.remove());
-
-    document.body.classList.remove("modal-open");
-
-    document.body.style.removeProperty(
-      "padding-right"
-    );
-
-    document.body.style.removeProperty(
-      "overflow"
-    );
-  };
-
-  const criarTela=(titulo,texto,cor)=>{
-    document
-      .getElementById("evolua-gateway-overlay")
-      ?.remove();
-
-    const tela=document.createElement("div");
-
-    tela.id="evolua-gateway-overlay";
-
-    tela.style.cssText=
-      "position:fixed;"+
-      "inset:0;"+
-      "z-index:999999;"+
-      "background:#111827;"+
-      "display:flex;"+
-      "align-items:center;"+
-      "justify-content:center;"+
-      "font-family:Arial,sans-serif;"+
-      "text-align:center;"+
-      "color:#fff;"+
-      "padding:25px";
-
-    tela.innerHTML=
-      '<div style="max-width:720px">'+
-        '<div style="'+
-          'font-size:30px;'+
-          'font-weight:bold;'+
-          'color:'+cor+';'+
-          'margin-bottom:14px">'+
-          titulo+
-        '</div>'+
-        '<p style="'+
-          'font-size:18px;'+
-          'line-height:1.5;'+
-          'margin:0 auto 12px">'+
-          texto+
-        '</p>'+
-      '</div>';
-
-    document.body.appendChild(tela);
-
-    return tela;
-  };
-
-  const mostrarVerificacao=()=>{
-    criarTela(
-      "⚠️ Atualização cadastral obrigatória",
-      "Estamos verificando a situação cadastral da sua unidade.<br><br>Aguarde...",
-      "#ffcc00"
-    );
-  };
-
-  const finalizarAviso=async(tipo)=>{
-    const concluidoAgora=
-      tipo==="ok";
-
-    criarTela(
-      concluidoAgora
-        ?"✅ Atualização concluída com sucesso!"
-        :"✅ Sua atualização cadastral já está validada!",
-      concluidoAgora
-        ?"Os dados da sua unidade foram validados. Seu acesso está liberado."
-        :"Identificamos que sua unidade já concluiu a atualização cadastral. Nenhuma nova ação é necessária.",
-      "#4ade80"
-    );
-
-    limparUrl();
-
-    /*
-      Mantém a confirmação visível um pouco antes
-      de fechar o aviso.
-    */
-    await esperar(900);
-
-    let fechado=false;
-
-    try{
-      fechado=await clicarNaoMostrar();
-    }catch(erro){
-      console.warn(
-        "[Evolua Gateway] Erro ao tentar clicar no botão nativo:",
-        erro
-      );
-    }
-
-    /*
-      Se o botão real não existir ou o clique falhar,
-      usa o endpoint que já havíamos validado.
-    */
-    if(!fechado){
-      try{
-        fechado=await ocultarAvisoFallback();
-      }catch(erro){
-        console.warn(
-          "[Evolua Gateway] Fallback de ocultação falhou:",
-          erro
+        const resposta = await window.axios.get(
+          C.tokenPath,
+          {
+            timeout: C.timeout
+          }
         );
-      }
+
+        const doc = new DOMParser().parseFromString(
+          String(resposta.data || ""),
+          "text/html"
+        );
+
+        const seletores = [
+          "#inputCodigo",
+          "#CodigoPolo",
+          '[name="CodigoPolo"]',
+          '[name="CodigoExterno"]',
+          '[name="CodigoExternoPolo"]'
+        ];
+
+        for (const seletor of seletores) {
+          const el = doc.querySelector(seletor);
+
+          if (!el) continue;
+
+          const valor = String(
+            el.value ||
+            el.getAttribute("value") ||
+            el.textContent ||
+            ""
+          );
+
+          const digitos = valor.replace(/\D/g, "");
+
+          if (digitos && digitos.length <= 6) {
+            return digitos.padStart(6, "0");
+          }
+        }
+
+        throw new Error("Codigo comercial do polo nao encontrado");
+      })().catch(erro => {
+        poloPromise = null;
+        throw erro;
+      });
     }
 
-    await esperar(700);
+    return poloPromise;
+  }
 
-    document
-      .getElementById("evolua-gateway-overlay")
-      ?.remove();
+  // ============================================
+  // REDIRECIONAMENTO PARA O LOVABLE
+  // ============================================
 
-    limparInterface();
-
-    console.log(
-      concluidoAgora
-        ?"[Evolua Gateway] Atualização concluída e aviso finalizado."
-        :"[Evolua Gateway] Atualização já validada e aviso finalizado."
-    );
-  };
-
-  const mostrarErro=()=>{
-    document
-      .getElementById("evolua-gateway-overlay")
-      ?.remove();
-
-    const aviso=document.createElement("div");
-
-    aviso.style.cssText=
-      "position:fixed;"+
-      "bottom:20px;"+
-      "left:20px;"+
-      "right:20px;"+
-      "z-index:999999;"+
-      "background:#fff3cd;"+
-      "color:#664d03;"+
-      "border:1px solid #ffecb5;"+
-      "padding:14px;"+
-      "border-radius:8px;"+
-      "font-family:Arial,sans-serif;"+
-      "text-align:center;"+
-      "box-shadow:0 8px 25px rgba(0,0,0,.18)";
-
-    aviso.textContent=
-      "Não foi possível validar a atualização cadastral. "+
-      "Atualize a página ou tente novamente em alguns instantes.";
-
-    document.body.appendChild(aviso);
-  };
-
-  try{
-    const urlAtual=
-      new URL(location.href);
-
-    const retorno=
-      urlAtual.searchParams.get(
-        C.parametro
-      );
-
-    /*
-      RETORNO DO GATEWAY
-
-      ok
-      = acabou de preencher o formulário
-
-      ja-concluido
-      = já existia na base importada/externa
-    */
-    if(
-      retorno==="ok"||
-      retorno==="ja-concluido"
-    ){
-      await finalizarAviso(
-        retorno
-      );
-
-      return;
+  function abrirRoleta(polo) {
+    if (!/^\d{6}$/.test(polo)) {
+      throw new Error("Codigo de polo invalido");
     }
 
-    const polo=
-      await obterPolo();
+    const url = new URL(C.destino);
 
-    console.log(
-      "[Evolua Gateway] Polo identificado:",
+    // O Lovable identifica o polo por este parametro.
+    url.searchParams.set("polo", polo);
+
+    console.info(
+      "[Evolua BF] Abrindo roleta para o polo:",
       polo
     );
 
-    console.log(
-      "[Evolua Gateway] Origem identificada:",
-      location.origin
-    );
-
-    mostrarVerificacao();
-
-    const destino=
-      `${C.gateway}?polo=${encodeURIComponent(polo)}`+
-      `&return_origin=${encodeURIComponent(location.origin)}`;
-
-    console.log(
-      "[Evolua Gateway] Redirecionando para:",
-      destino
-    );
-
-    await esperar(1200);
-
-    location.href=
-      destino;
-
-  }catch(erro){
-    console.error(
-      "[Evolua Gateway] Erro:",
-      erro
-    );
-
-    mostrarErro();
+    // Navegacao direta: sem POST externo e sem CORS.
+    window.location.assign(url.toString());
   }
+
+  // ============================================
+  // ESTILOS DO AVISO
+  // ============================================
+
+  if (!document.getElementById("evolua-bf-estilos")) {
+    const style = document.createElement("style");
+    style.id = "evolua-bf-estilos";
+
+    style.textContent = `
+      @keyframes evoluaBFPulse {
+        0%, 100% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(210, 30, 30, .50);
+        }
+
+        60% {
+          transform: scale(1.035);
+          box-shadow: 0 0 0 15px rgba(210, 30, 30, 0);
+        }
+      }
+
+      .evolua-bf-img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 65vh;
+        object-fit: contain;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform .22s ease, filter .22s ease;
+      }
+
+      .evolua-bf-img:hover {
+        transform: scale(1.012);
+        filter: brightness(1.06);
+      }
+
+      .evolua-bf-img:focus-visible {
+        outline: 3px solid #f5cc66;
+        outline-offset: 4px;
+      }
+
+      .evolua-bf-btn {
+        display: block;
+        max-width: 95%;
+        margin: 15px auto 8px;
+        padding: 16px 28px;
+        border: 2px solid #f5cc66;
+        border-radius: 12px;
+        background: linear-gradient(
+          135deg,
+          #e32828,
+          #a50c16
+        );
+        color: #ffffff;
+        font: 800 17px Arial, sans-serif;
+        text-align: center;
+        cursor: pointer;
+        animation: evoluaBFPulse 1.8s infinite;
+        transition: filter .2s ease;
+      }
+
+      .evolua-bf-btn:hover {
+        filter: brightness(1.12);
+      }
+
+      .evolua-bf-btn:disabled {
+        opacity: .7;
+        cursor: wait;
+        animation: none;
+      }
+
+      .evolua-bf-btn:focus-visible {
+        outline: 3px solid #f5cc66;
+        outline-offset: 4px;
+      }
+
+      .evolua-bf-status {
+        margin: 8px auto;
+        color: #333333;
+        font: 14px Arial, sans-serif;
+        line-height: 1.4;
+      }
+
+      @media (max-width: 600px) {
+        .evolua-bf-img {
+          max-height: 52vh;
+        }
+
+        .evolua-bf-btn {
+          font-size: 14px;
+          padding: 13px 18px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .evolua-bf-btn {
+          animation: none;
+        }
+
+        .evolua-bf-img {
+          transition: none;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  // ============================================
+  // CONSTRUCAO DO AVISO NO ENTER
+  // ============================================
+
+  function iniciar(marker) {
+    const modal = marker.closest(".modal-content");
+    const body = modal?.querySelector(".modal-body");
+
+    if (!modal || !body) return false;
+    if (initialized.has(body)) return true;
+
+    // Captura a imagem cadastrada no aviso.
+    const original = [...body.querySelectorAll("img")]
+      .find(img => img.getAttribute("src"));
+
+    const src = original?.currentSrc || original?.src;
+
+    if (!src) {
+      console.warn(
+        "[Evolua BF] Nenhuma imagem encontrada no aviso."
+      );
+      return false;
+    }
+
+    initialized.add(body);
+
+    // Expande o modal para exibir a arte completa.
+    const dialog = modal.closest(".modal-dialog");
+
+    if (dialog) {
+      dialog.style.setProperty(
+        "width", "94vw", "important"
+      );
+
+      dialog.style.setProperty(
+        "max-width", "1250px", "important"
+      );
+
+      dialog.style.setProperty(
+        "margin", "20px auto", "important"
+      );
+    }
+
+    modal.style.setProperty(
+      "overflow", "visible", "important"
+    );
+
+    Object.entries({
+      padding: "12px",
+      margin: "0",
+      overflow: "auto",
+      height: "auto",
+      "max-height": "calc(100vh - 150px)"
+    }).forEach(([chave, valor]) => {
+      body.style.setProperty(
+        chave,
+        valor,
+        "important"
+      );
+    });
+
+    const wrap = document.createElement("div");
+
+    wrap.style.cssText =
+      "width:100%;" +
+      "max-width:1200px;" +
+      "margin:0 auto;" +
+      "text-align:center;" +
+      "font-family:Arial,sans-serif;";
+
+    // ============================================
+    // IMAGEM DA ROLETA CLICAVEL
+    // ============================================
+
+    const image = document.createElement("img");
+
+    image.src = src;
+    image.alt = "Clique na roleta para desbloquear seu benefício";
+    image.title = "Participar da Black Friday Evolua";
+    image.className = "evolua-bf-img";
+
+    image.tabIndex = 0;
+    image.setAttribute("role", "button");
+    image.setAttribute(
+      "aria-label",
+      "Participar da roleta Black Friday Evolua"
+    );
+
+    // ============================================
+    // BOTAO PULSANTE
+    // ============================================
+
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className = "evolua-bf-btn";
+    button.textContent = C.textoBotao;
+
+    // ============================================
+    // MENSAGENS DE STATUS
+    // ============================================
+
+    const status = document.createElement("p");
+
+    status.className = "evolua-bf-status";
+    status.setAttribute("role", "status");
+
+    let busy = false;
+
+    // ============================================
+    // PARTICIPACAO E REDIRECIONAMENTO
+    // ============================================
+
+    async function participar() {
+      if (busy) return;
+
+      busy = true;
+      button.disabled = true;
+      button.textContent = "PREPARANDO SUA ROLETA...";
+      status.textContent = "";
+
+      try {
+        // Captura o polo apenas depois do clique.
+        const polo = await obterPolo();
+
+        console.info(
+          "[Evolua BF] Polo identificado:",
+          polo
+        );
+
+        button.textContent = "ABRINDO SUA ROLETA...";
+
+        abrirRoleta(polo);
+
+      } catch (erro) {
+        console.warn(
+          "[Evolua BF] Falha na identificacao:",
+          erro
+        );
+
+        status.textContent =
+          "Não foi possível identificar sua escola. " +
+          "Tente novamente.";
+
+        button.textContent = C.textoBotao;
+        button.disabled = false;
+        busy = false;
+      }
+    }
+
+    // Clique em qualquer parte da imagem.
+    image.addEventListener("click", participar);
+
+    // Acessibilidade via teclado.
+    image.addEventListener("keydown", evento => {
+      if (
+        evento.key === "Enter" ||
+        evento.key === " "
+      ) {
+        evento.preventDefault();
+        participar();
+      }
+    });
+
+    // Clique no botao pulsante.
+    button.addEventListener("click", participar);
+
+    marker.style.display = "none";
+
+    // Remove a imagem original e recria sem cortes.
+    wrap.append(image, button, status);
+    body.replaceChildren(marker, wrap);
+
+    console.info(
+      "[Evolua BF] Aviso inicializado com imagem clicavel"
+    );
+
+    return true;
+  }
+
+  // ============================================
+  // AGUARDAR O AVISO APARECER NO ENTER
+  // ============================================
+
+  function verificar() {
+    const marker = document.getElementById(C.marker);
+
+    if (marker && iniciar(marker)) {
+      observer?.disconnect();
+    }
+  }
+
+  verificar();
+
+  observer = new MutationObserver(verificar);
+
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+
+  setTimeout(() => {
+    observer?.disconnect();
+  }, 30000);
+
 })();
