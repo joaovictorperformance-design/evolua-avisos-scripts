@@ -1,117 +1,78 @@
 
 /*
- * =====================================================
  * CENTRAL DE SPRINTS - EVOLUA EDUCACAO
- * Integracao personalizada com avisos do ENTER
+ * Versao 3.0 - 16/11/2026
  *
- * VERSAO 2.0 - 16/11/2026
- *
- * FUNCIONALIDADES:
- * - Identifica o aviso pelo marcador exclusivo
- * - Captura a imagem cadastrada no ENTER
- * - Reconstrói a imagem sem recortes nativos
- * - Ajusta o tamanho do modal ao conteudo
- * - Exibe mensagem de chamada para acao
- * - Cria 6 botoes coloridos com links WhatsApp
- * - Mantem os 6 botoes na mesma linha no desktop
- * - Adapta o layout para tablets e celulares
- * - Preserva o cabecalho e o rodape do ENTER
- * - Nao interfere nos demais avisos
- *
- * MARCADOR OBRIGATORIO:
- * <span id="evolua-central-sprints"
- *       style="display:none"></span>
- * =====================================================
+ * - Imagem responsiva
+ * - Modal adaptado ao conteudo
+ * - Seis botoes de WhatsApp
+ * - Mensagem entre imagem e botoes
+ * - Oculta "Nao mostrar novamente"
+ * - Preserva o botao X
+ * - Nao interfere em outros avisos
  */
 
 (() => {
   "use strict";
 
-  // Executar somente no painel inicial do ENTER.
   if (
     location.pathname.toLowerCase() !==
     "/inicio/painel"
-  ) {
-    return;
-  }
+  ) return;
 
-  // Impedir inicializacao duplicada.
-  if (window.__evoluaCentralSprintsV2) {
-    return;
-  }
-
-  window.__evoluaCentralSprintsV2 = true;
-
-  // =====================================================
-  // CONFIGURACOES
-  // =====================================================
+  if (window.__evoluaCentralSprintsV3) return;
+  window.__evoluaCentralSprintsV3 = true;
 
   const CONFIG = {
     marker: "evolua-central-sprints",
-
     title: "Central de Sprints - Evolua Educacao",
-
     message:
       "👇🏼 Clique nos botões abaixo e participe das Sprints! 👇🏼",
-
     maxWidth: 1350,
-
     observationTimeout: 45000
   };
-
-  // =====================================================
-  // GRUPOS OFICIAIS
-  // =====================================================
 
   const SPRINTS = [
     {
       name: "Gamificação",
       color: "#8526b8",
-      url:
-        "https://chat.whatsapp.com/FLn07Zl095fHhZCq8dPuIC"
+      url: "https://chat.whatsapp.com/FLn07Zl095fHhZCq8dPuIC"
     },
     {
       name: "Evolua Oferta",
       color: "#e47711",
-      url:
-        "https://chat.whatsapp.com/B84gmv6Vx6h88fUG4VwSci"
+      url: "https://chat.whatsapp.com/B84gmv6Vx6h88fUG4VwSci"
     },
     {
       name: "Inglês",
       color: "#087fbd",
-      url:
-        "https://chat.whatsapp.com/L7Cz72De12jH4Wga96uQfX"
+      url: "https://chat.whatsapp.com/L7Cz72De12jH4Wga96uQfX"
     },
     {
       name: "Robótica",
       color: "#06a4ba",
-      url:
-        "https://chat.whatsapp.com/DRBpHNjDrfdCSQbROOAwAR"
+      url: "https://chat.whatsapp.com/DRBpHNjDrfdCSQbROOAwAR"
     },
     {
       name: "Informática Kids",
       color: "#49a418",
-      url:
-        "https://chat.whatsapp.com/FAJCoDF6hi9ERIzJWPJTxB"
+      url: "https://chat.whatsapp.com/FAJCoDF6hi9ERIzJWPJTxB"
     },
     {
       name: "Inteligência Artificial",
       color: "#6240be",
-      url:
-        "https://chat.whatsapp.com/FB7RfRmQnjxH2rVDjjDUaB"
+      url: "https://chat.whatsapp.com/FB7RfRmQnjxH2rVDjjDUaB"
     }
   ];
 
-  // =====================================================
-  // UTILITARIOS
-  // =====================================================
+  const modalObservers = new WeakMap();
 
   function applyStyles(element, styles) {
     if (!element) return;
 
-    Object.entries(styles).forEach(([property, value]) => {
+    Object.entries(styles).forEach(([key, value]) => {
       element.style.setProperty(
-        property,
+        key,
         String(value),
         "important"
       );
@@ -123,25 +84,89 @@
 
     applyStyles(element, styles);
 
-    if (text) {
-      element.textContent = text;
-    }
+    if (text) element.textContent = text;
 
     return element;
   }
 
   // =====================================================
-  // DIMENSIONAMENTO RESPONSIVO
+  // OCULTAR SOMENTE O BOTAO NATIVO DESTE AVISO
+  // =====================================================
+
+  function normalizeText(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  function hideNativeButton(modal) {
+    if (
+      !modal ||
+      modal.dataset.evoluaSprintsReady !== "1"
+    ) return;
+
+    const candidates = modal.querySelectorAll(
+      "button, a, input[type='button'], " +
+      "input[type='submit'], [role='button']"
+    );
+
+    candidates.forEach((element) => {
+      const text = normalizeText(
+        element.innerText ||
+        element.value ||
+        element.textContent ||
+        element.getAttribute("aria-label")
+      );
+
+      if (
+        text.includes("nao mostrar novamente")
+      ) {
+        if (
+          element.style.getPropertyValue("display") !==
+          "none"
+        ) {
+          applyStyles(element, {
+            display: "none"
+          });
+
+          element.setAttribute(
+            "aria-hidden",
+            "true"
+          );
+        }
+      }
+    });
+  }
+
+  function watchNativeButton(modal) {
+    if (modalObservers.has(modal)) return;
+
+    const observer = new MutationObserver(() => {
+      hideNativeButton(modal);
+    });
+
+    observer.observe(modal, {
+      childList: true,
+      subtree: true
+    });
+
+    modalObservers.set(modal, observer);
+
+    hideNativeButton(modal);
+  }
+
+  // =====================================================
+  // AJUSTE RESPONSIVO DO MODAL
   // =====================================================
 
   function resizeModal(modal) {
-    if (!modal) return;
-
     if (
+      !modal ||
       modal.dataset.evoluaSprintsReady !== "1"
-    ) {
-      return;
-    }
+    ) return;
 
     const dialog = modal.querySelector(
       ".modal-dialog"
@@ -174,30 +199,22 @@
       !wrap ||
       !image ||
       !links
-    ) {
-      return;
-    }
+    ) return;
 
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
-
-    // Em celulares, permitir rolagem do conteudo.
     const mobile = screenWidth < 700;
 
-    // Reservar espaco para titulo, mensagem,
-    // botoes e controles nativos do ENTER.
-    const reservedHeight = mobile ? 260 : 220;
+    const reservedHeight = mobile ? 260 : 190;
 
     const availableHeight = Math.max(
       220,
       screenHeight - reservedHeight
     );
 
-    // Imagem original possui proporcao 16:9.
     const widthByHeight =
       availableHeight * (16 / 9);
 
-    // O modal nao pode ultrapassar a tela.
     const maxScreenWidth =
       screenWidth * (mobile ? 0.96 : 0.94);
 
@@ -250,8 +267,6 @@
         : `${Math.floor(availableHeight)}px`
     });
 
-    // Usar a largura real disponivel no modal
-    // para definir o numero de colunas.
     const contentWidth = Math.max(
       0,
       finalWidth - 24
@@ -272,24 +287,18 @@
   }
 
   // =====================================================
-  // CRIACAO DOS BOTOES
+  // CONSTRUIR OS BOTOES DOS GRUPOS
   // =====================================================
 
   function createButtons() {
     const nav = createElement("nav", {
       display: "grid",
-
       "grid-template-columns":
         "repeat(6, minmax(0, 1fr))",
-
-      gap: "10px",
-
+      gap: "8px",
       width: "100%",
-
       margin: "0",
-
       padding: "0",
-
       "box-sizing": "border-box"
     });
 
@@ -297,7 +306,7 @@
 
     nav.setAttribute(
       "aria-label",
-      "Acessar grupos oficiais das Sprints"
+      "Grupos oficiais das Sprints"
     );
 
     SPRINTS.forEach((sprint) => {
@@ -305,45 +314,25 @@
         "a",
         {
           display: "flex",
-
           "align-items": "center",
-
           "justify-content": "center",
-
           "text-align": "center",
-
           "min-width": "0",
-
-          "min-height": "50px",
-
-          padding: "10px 6px",
-
+          "min-height": "44px",
+          padding: "9px 5px",
           background: sprint.color,
-
           color: "#ffffff",
-
-          "font-family":
-            "Arial, Helvetica, sans-serif",
-
-          "font-size": "14px",
-
+          "font-family": "Arial, sans-serif",
+          "font-size": "13px",
           "font-weight": "700",
-
           "line-height": "1.25",
-
           "text-decoration": "none",
-
-          "border-radius": "10px",
-
+          "border-radius": "9px",
           "box-shadow":
-            "0 4px 10px rgba(0,0,0,.16)",
-
+            "0 3px 9px rgba(0,0,0,.15)",
           "box-sizing": "border-box",
-
           "overflow-wrap": "break-word",
-
           cursor: "pointer",
-
           transition:
             "filter .2s ease, transform .2s ease"
         },
@@ -351,9 +340,7 @@
       );
 
       button.href = sprint.url;
-
       button.target = "_blank";
-
       button.rel = "noopener noreferrer";
 
       button.setAttribute(
@@ -361,7 +348,6 @@
         `Entrar no grupo da Sprint ${sprint.name}`
       );
 
-      // Efeito ao passar o mouse.
       button.addEventListener(
         "mouseenter",
         () => {
@@ -378,23 +364,6 @@
         }
       );
 
-      button.addEventListener(
-        "focus",
-        () => {
-          button.style.outline =
-            "3px solid #ffd34a";
-          button.style.outlineOffset = "2px";
-        }
-      );
-
-      button.addEventListener(
-        "blur",
-        () => {
-          button.style.outline = "";
-          button.style.outlineOffset = "";
-        }
-      );
-
       nav.appendChild(button);
     });
 
@@ -402,29 +371,21 @@
   }
 
   // =====================================================
-  // TEXTO ENTRE A IMAGEM E OS BOTOES
+  // MENSAGEM ENTRE A IMAGEM E OS BOTOES
   // =====================================================
 
   function createMessage() {
     return createElement(
       "p",
       {
-        margin: "12px 0 10px",
-
+        margin: "10px 0 9px",
         padding: "0 6px",
-
         color: "#173257",
-
-        "font-family":
-          "Arial, Helvetica, sans-serif",
-
+        "font-family": "Arial, sans-serif",
         "font-size":
-          "clamp(14px, 1.5vw, 21px)",
-
+          "clamp(14px,1.5vw,20px)",
         "font-weight": "800",
-
         "line-height": "1.3",
-
         "text-align": "center"
       },
       CONFIG.message
@@ -432,7 +393,7 @@
   }
 
   // =====================================================
-  // RECONSTRUCAO DO AVISO
+  // INICIALIZAR APENAS A CENTRAL DE SPRINTS
   // =====================================================
 
   function initialize(marker) {
@@ -454,120 +415,76 @@
       return false;
     }
 
-    // Evitar recriar o aviso ja processado.
     if (
       modal.dataset.evoluaSprintsReady === "1"
     ) {
+      hideNativeButton(modal);
       resizeModal(modal);
       return true;
     }
 
-    // Localizar a imagem cadastrada no ENTER.
     const nativeImage = body.querySelector("img");
 
-    if (!nativeImage) {
-      return false;
-    }
+    if (!nativeImage) return false;
 
-    // Capturar somente o endereco da imagem.
-    // A imagem nativa sera descartada para
-    // eliminar estilos de recorte do ENTER.
     const imageSource =
       nativeImage.currentSrc ||
       nativeImage.getAttribute("src") ||
       nativeImage.src;
 
-    if (!imageSource) {
-      return false;
-    }
+    if (!imageSource) return false;
 
-    // Container principal.
     const wrap = createElement("section", {
       width: "100%",
-
       margin: "0 auto",
-
       padding: "0",
-
       "box-sizing": "border-box",
-
-      "font-family":
-        "Arial, Helvetica, sans-serif"
+      "font-family": "Arial, sans-serif"
     });
 
     wrap.dataset.evoluaSprintsWrap = "1";
 
-    // Nova imagem sem estilos herdados.
     const image = document.createElement("img");
 
     image.dataset.evoluaSprintsImage = "1";
-
     image.src = imageSource;
-
     image.alt = CONFIG.title;
 
     applyStyles(image, {
       display: "block",
-
       width: "100%",
-
       height: "auto",
-
       "object-fit": "contain",
-
       "border-radius": "10px"
     });
 
-    // Mensagem de chamada para acao.
     const message = createMessage();
-
-    // Seis botoes clicaveis.
     const links = createButtons();
 
-    // Preservar o marcador para futuras
-    // verificacoes do ENTER.
     marker.hidden = true;
-
     marker.setAttribute(
       "aria-hidden",
       "true"
     );
 
-    // Reconstruir o conteudo visual.
-    wrap.appendChild(image);
+    wrap.append(image, message, links);
 
-    wrap.appendChild(message);
-
-    wrap.appendChild(links);
-
-    // Remove a imagem nativa e os estilos
-    // que causavam cortes e espacos vazios.
     body.replaceChildren(marker, wrap);
 
-    // Ajustar janela e conteudo do ENTER.
     applyStyles(content, {
       height: "auto",
-
       "min-height": "0",
-
       overflow: "auto"
     });
 
     applyStyles(body, {
       display: "block",
-
       margin: "0",
-
       padding: "10px 12px 14px",
-
       height: "auto",
-
       "min-height": "0",
-
       "max-height": "none",
-
       overflow: "visible",
-
       "text-align": "initial"
     });
 
@@ -582,49 +499,38 @@
       });
     }
 
-    // Registrar inicializacao concluida.
     modal.dataset.evoluaSprintsReady = "1";
 
-    // Aplicar dimensoes finais.
     resizeModal(modal);
 
-    // Recalcular apos carregar a imagem.
+    // Ocultar o botao nativo mesmo que
+    // ele seja inserido mais tarde pelo ENTER.
+    watchNativeButton(modal);
+
     image.addEventListener("load", () => {
       resizeModal(modal);
     });
 
     console.info(
-      "[Central de Sprints] Versao 2.0 inicializada."
-    );
-
-    console.info(
-      "[Central de Sprints] 6 grupos configurados."
+      "[Central de Sprints] V3 inicializada."
     );
 
     return true;
   }
 
   // =====================================================
-  // DETECCAO DO MARCADOR
+  // OBSERVAR CARREGAMENTO DO ENTER
   // =====================================================
 
   function scan() {
-    const markers = document.querySelectorAll(
+    document.querySelectorAll(
       `#${CONFIG.marker}`
-    );
-
-    markers.forEach((marker) => {
-      initialize(marker);
-    });
+    ).forEach(initialize);
   }
 
-  // Executar ao carregar.
   scan();
 
-  // Aguardar a criacao dinamica do aviso.
-  const observer = new MutationObserver(() => {
-    scan();
-  });
+  const observer = new MutationObserver(scan);
 
   observer.observe(
     document.documentElement,
@@ -634,18 +540,14 @@
     }
   );
 
-  // Evitar observador permanente.
   window.setTimeout(() => {
     observer.disconnect();
   }, CONFIG.observationTimeout);
 
-  // Recalcular ao redimensionar o navegador.
   window.addEventListener("resize", () => {
     document.querySelectorAll(
       '.modal[data-evolua-sprints-ready="1"]'
-    ).forEach((modal) => {
-      resizeModal(modal);
-    });
+    ).forEach(resizeModal);
   });
 
 })();
