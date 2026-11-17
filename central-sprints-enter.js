@@ -1,14 +1,17 @@
 
 /*
  * CENTRAL DE SPRINTS - EVOLUA EDUCACAO
- * Versao 3.0 - 16/11/2026
+ * VERSAO 4.0 - 17/11/2026
  *
- * - Imagem responsiva
- * - Modal adaptado ao conteudo
- * - Seis botoes de WhatsApp
- * - Mensagem entre imagem e botoes
+ * - Utiliza a imagem ja cadastrada no ENTER
+ * - Identifica o aviso pelo marcador exclusivo
+ * - Reconstrui a imagem sem estilos de recorte
+ * - Ajusta o modal ao conteudo
+ * - Cria os seis botoes abaixo da imagem
+ * - Gamificacao e Evolua Oferta: ESGOTADO
+ * - Mantem os outros quatro grupos ativos
  * - Oculta "Nao mostrar novamente"
- * - Preserva o botao X
+ * - Preserva o botao X do aviso
  * - Nao interfere em outros avisos
  */
 
@@ -20,8 +23,8 @@
     "/inicio/painel"
   ) return;
 
-  if (window.__evoluaCentralSprintsV3) return;
-  window.__evoluaCentralSprintsV3 = true;
+  if (window.__evoluaCentralSprintsV4) return;
+  window.__evoluaCentralSprintsV4 = true;
 
   const CONFIG = {
     marker: "evolua-central-sprints",
@@ -32,66 +35,88 @@
     observationTimeout: 45000
   };
 
+  // ========================================
+  // SPRINTS E STATUS DE INSCRICAO
+  // ========================================
+
   const SPRINTS = [
     {
       name: "Gamificação",
       color: "#8526b8",
-      url: "https://chat.whatsapp.com/FLn07Zl095fHhZCq8dPuIC"
+      url: null,
+      esgotado: true
     },
     {
       name: "Evolua Oferta",
       color: "#e47711",
-      url: "https://chat.whatsapp.com/B84gmv6Vx6h88fUG4VwSci"
+      url: null,
+      esgotado: true
     },
     {
       name: "Inglês",
       color: "#087fbd",
-      url: "https://chat.whatsapp.com/L7Cz72De12jH4Wga96uQfX"
+      url:
+        "https://chat.whatsapp.com/L7Cz72De12jH4Wga96uQfX",
+      esgotado: false
     },
     {
       name: "Robótica",
       color: "#06a4ba",
-      url: "https://chat.whatsapp.com/DRBpHNjDrfdCSQbROOAwAR"
+      url:
+        "https://chat.whatsapp.com/DRBpHNjDrfdCSQbROOAwAR",
+      esgotado: false
     },
     {
       name: "Informática Kids",
       color: "#49a418",
-      url: "https://chat.whatsapp.com/FAJCoDF6hi9ERIzJWPJTxB"
+      url:
+        "https://chat.whatsapp.com/FAJCoDF6hi9ERIzJWPJTxB",
+      esgotado: false
     },
     {
       name: "Inteligência Artificial",
       color: "#6240be",
-      url: "https://chat.whatsapp.com/FB7RfRmQnjxH2rVDjjDUaB"
+      url:
+        "https://chat.whatsapp.com/FB7RfRmQnjxH2rVDjjDUaB",
+      esgotado: false
     }
   ];
 
   const modalObservers = new WeakMap();
 
+  // ========================================
+  // UTILITARIOS
+  // ========================================
+
   function applyStyles(element, styles) {
     if (!element) return;
 
-    Object.entries(styles).forEach(([key, value]) => {
-      element.style.setProperty(
-        key,
-        String(value),
-        "important"
-      );
-    });
+    Object.entries(styles).forEach(
+      ([key, value]) => {
+        element.style.setProperty(
+          key,
+          String(value),
+          "important"
+        );
+      }
+    );
   }
 
-  function createElement(tag, styles = {}, text = "") {
+  function createElement(
+    tag,
+    styles = {},
+    text = ""
+  ) {
     const element = document.createElement(tag);
 
     applyStyles(element, styles);
 
-    if (text) element.textContent = text;
+    if (text) {
+      element.textContent = text;
+    }
 
     return element;
   }
-
-  // =====================================================
-  // OCULTAR SOMENTE O BOTAO NATIVO DESTE AVISO
-  // =====================================================
 
   function normalizeText(value) {
     return String(value || "")
@@ -101,6 +126,10 @@
       .trim()
       .toLowerCase();
   }
+
+  // ========================================
+  // OCULTAR BOTAO NATIVO DO AVISO
+  // ========================================
 
   function hideNativeButton(modal) {
     if (
@@ -124,19 +153,14 @@
       if (
         text.includes("nao mostrar novamente")
       ) {
-        if (
-          element.style.getPropertyValue("display") !==
-          "none"
-        ) {
-          applyStyles(element, {
-            display: "none"
-          });
+        applyStyles(element, {
+          display: "none"
+        });
 
-          element.setAttribute(
-            "aria-hidden",
-            "true"
-          );
-        }
+        element.setAttribute(
+          "aria-hidden",
+          "true"
+        );
       }
     });
   }
@@ -158,9 +182,9 @@
     hideNativeButton(modal);
   }
 
-  // =====================================================
-  // AJUSTE RESPONSIVO DO MODAL
-  // =====================================================
+  // ========================================
+  // DIMENSIONAMENTO DO MODAL
+  // ========================================
 
   function resizeModal(modal) {
     if (
@@ -203,6 +227,7 @@
 
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
+
     const mobile = screenWidth < 700;
 
     const reservedHeight = mobile ? 260 : 190;
@@ -286,9 +311,9 @@
     });
   }
 
-  // =====================================================
-  // CONSTRUIR OS BOTOES DOS GRUPOS
-  // =====================================================
+  // ========================================
+  // CRIAR OS SEIS BOTOES
+  // ========================================
 
   function createButtons() {
     const nav = createElement("nav", {
@@ -310,59 +335,103 @@
     );
 
     SPRINTS.forEach((sprint) => {
-      const button = createElement(
-        "a",
-        {
-          display: "flex",
-          "align-items": "center",
-          "justify-content": "center",
-          "text-align": "center",
-          "min-width": "0",
-          "min-height": "44px",
-          padding: "9px 5px",
-          background: sprint.color,
-          color: "#ffffff",
-          "font-family": "Arial, sans-serif",
-          "font-size": "13px",
-          "font-weight": "700",
-          "line-height": "1.25",
-          "text-decoration": "none",
-          "border-radius": "9px",
-          "box-shadow":
-            "0 3px 9px rgba(0,0,0,.15)",
-          "box-sizing": "border-box",
-          "overflow-wrap": "break-word",
-          cursor: "pointer",
-          transition:
-            "filter .2s ease, transform .2s ease"
-        },
-        sprint.name
+      const isDisabled = sprint.esgotado;
+
+      // Sprints esgotadas nao recebem link.
+      const button = document.createElement(
+        isDisabled ? "span" : "a"
       );
 
-      button.href = sprint.url;
-      button.target = "_blank";
-      button.rel = "noopener noreferrer";
+      const label = isDisabled
+        ? "ESGOTADO"
+        : sprint.name;
 
-      button.setAttribute(
-        "aria-label",
-        `Entrar no grupo da Sprint ${sprint.name}`
-      );
+      button.textContent = label;
 
-      button.addEventListener(
-        "mouseenter",
-        () => {
-          button.style.filter = "brightness(1.12)";
-          button.style.transform = "translateY(-2px)";
-        }
-      );
+      applyStyles(button, {
+        display: "flex",
+        "align-items": "center",
+        "justify-content": "center",
+        "text-align": "center",
+        "min-width": "0",
+        "min-height": "44px",
+        padding: "9px 5px",
 
-      button.addEventListener(
-        "mouseleave",
-        () => {
-          button.style.filter = "";
-          button.style.transform = "";
-        }
-      );
+        background: isDisabled
+          ? "#858585"
+          : sprint.color,
+
+        color: "#ffffff",
+
+        "font-family": "Arial, sans-serif",
+        "font-size": "13px",
+        "font-weight": "700",
+        "line-height": "1.25",
+        "text-decoration": "none",
+        "border-radius": "9px",
+
+        "box-shadow": isDisabled
+          ? "none"
+          : "0 3px 9px rgba(0,0,0,.15)",
+
+        "box-sizing": "border-box",
+        "overflow-wrap": "break-word",
+
+        cursor: isDisabled
+          ? "not-allowed"
+          : "pointer",
+
+        opacity: isDisabled ? "0.85" : "1",
+
+        transition:
+          "filter .2s ease, transform .2s ease"
+      });
+
+      if (isDisabled) {
+        button.setAttribute(
+          "aria-label",
+          `Sprint ${sprint.name} - inscrições esgotadas`
+        );
+
+        button.setAttribute(
+          "title",
+          `${sprint.name}: turma esgotada`
+        );
+
+        button.setAttribute(
+          "aria-disabled",
+          "true"
+        );
+
+      } else {
+        button.href = sprint.url;
+        button.target = "_blank";
+        button.rel = "noopener noreferrer";
+
+        button.setAttribute(
+          "aria-label",
+          `Entrar no grupo da Sprint ${sprint.name}`
+        );
+
+        button.addEventListener(
+          "mouseenter",
+          () => {
+            button.style.filter =
+              "brightness(1.12)";
+
+            button.style.transform =
+              "translateY(-2px)";
+          }
+        );
+
+        button.addEventListener(
+          "mouseleave",
+          () => {
+            button.style.filter = "";
+            button.style.transform = "";
+          }
+        );
+      }
 
       nav.appendChild(button);
     });
@@ -370,9 +439,9 @@
     return nav;
   }
 
-  // =====================================================
-  // MENSAGEM ENTRE A IMAGEM E OS BOTOES
-  // =====================================================
+  // ========================================
+  // TEXTO ENTRE IMAGEM E BOTOES
+  // ========================================
 
   function createMessage() {
     return createElement(
@@ -392,9 +461,9 @@
     );
   }
 
-  // =====================================================
-  // INICIALIZAR APENAS A CENTRAL DE SPRINTS
-  // =====================================================
+  // ========================================
+  // INICIALIZAR O AVISO PERSONALIZADO
+  // ========================================
 
   function initialize(marker) {
     if (!marker || !marker.isConnected) {
@@ -423,6 +492,7 @@
       return true;
     }
 
+    // Capturar imagem cadastrada no ENTER.
     const nativeImage = body.querySelector("img");
 
     if (!nativeImage) return false;
@@ -444,6 +514,7 @@
 
     wrap.dataset.evoluaSprintsWrap = "1";
 
+    // Recriar a imagem sem o recorte nativo.
     const image = document.createElement("img");
 
     image.dataset.evoluaSprintsImage = "1";
@@ -462,11 +533,13 @@
     const links = createButtons();
 
     marker.hidden = true;
+
     marker.setAttribute(
       "aria-hidden",
       "true"
     );
 
+    // Recria somente o conteudo deste aviso.
     wrap.append(image, message, links);
 
     body.replaceChildren(marker, wrap);
@@ -503,8 +576,7 @@
 
     resizeModal(modal);
 
-    // Ocultar o botao nativo mesmo que
-    // ele seja inserido mais tarde pelo ENTER.
+    // Oculta somente o botao nativo deste aviso.
     watchNativeButton(modal);
 
     image.addEventListener("load", () => {
@@ -512,15 +584,20 @@
     });
 
     console.info(
-      "[Central de Sprints] V3 inicializada."
+      "[Central de Sprints] V4 inicializada."
+    );
+
+    console.info(
+      "[Central de Sprints] " +
+      "Gamificacao e Evolua Oferta esgotadas."
     );
 
     return true;
   }
 
-  // =====================================================
+  // ========================================
   // OBSERVAR CARREGAMENTO DO ENTER
-  // =====================================================
+  // ========================================
 
   function scan() {
     document.querySelectorAll(
