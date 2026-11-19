@@ -1,43 +1,64 @@
 
 /*
+ * =====================================================
  * CENTRAL DE SPRINTS - EVOLUA EDUCACAO
- * VERSAO 4.0 - 17/11/2026
+ * VERSAO 5.0 - 19/11/2026
+ * =====================================================
  *
- * - Utiliza a imagem ja cadastrada no ENTER
- * - Identifica o aviso pelo marcador exclusivo
- * - Reconstrui a imagem sem estilos de recorte
- * - Ajusta o modal ao conteudo
- * - Cria os seis botoes abaixo da imagem
- * - Gamificacao e Evolua Oferta: ESGOTADO
- * - Mantem os outros quatro grupos ativos
- * - Oculta "Nao mostrar novamente"
- * - Preserva o botao X do aviso
- * - Nao interfere em outros avisos
+ * SPRINTS ESGOTADAS:
+ * - Gamificacao
+ * - Painel Evolua Oferta
+ * - Ingles
+ * - Robotica
+ *
+ * SPRINTS DISPONIVEIS:
+ * - Informatica Kids
+ * - Inteligencia Artificial
+ *
+ * A imagem continua sendo cadastrada no ENTER.
+ * O JavaScript captura a imagem original do aviso.
+ *
+ * MARCADOR:
+ * <span id="evolua-central-sprints"
+ *       style="display:none"></span>
+ *
+ * Preserva o modal nativo e seu botao X.
+ * Oculta somente "Nao mostrar novamente".
  */
 
 (() => {
   "use strict";
 
+  // Executar somente no painel do ENTER.
   if (
     location.pathname.toLowerCase() !==
     "/inicio/painel"
   ) return;
 
-  if (window.__evoluaCentralSprintsV4) return;
-  window.__evoluaCentralSprintsV4 = true;
+  // Evitar inicializacao duplicada.
+  if (window.__evoluaCentralSprintsV5) return;
+  window.__evoluaCentralSprintsV5 = true;
+
+  // =====================================================
+  // CONFIGURACOES
+  // =====================================================
 
   const CONFIG = {
     marker: "evolua-central-sprints",
+
     title: "Central de Sprints - Evolua Educacao",
+
     message:
       "👇🏼 Clique nos botões abaixo e participe das Sprints! 👇🏼",
+
     maxWidth: 1350,
+
     observationTimeout: 45000
   };
 
-  // ========================================
-  // SPRINTS E STATUS DE INSCRICAO
-  // ========================================
+  // =====================================================
+  // SPRINTS E DISPONIBILIDADE
+  // =====================================================
 
   const SPRINTS = [
     {
@@ -55,16 +76,14 @@
     {
       name: "Inglês",
       color: "#087fbd",
-      url:
-        "https://chat.whatsapp.com/L7Cz72De12jH4Wga96uQfX",
-      esgotado: false
+      url: null,
+      esgotado: true
     },
     {
       name: "Robótica",
       color: "#06a4ba",
-      url:
-        "https://chat.whatsapp.com/DRBpHNjDrfdCSQbROOAwAR",
-      esgotado: false
+      url: null,
+      esgotado: true
     },
     {
       name: "Informática Kids",
@@ -82,19 +101,20 @@
     }
   ];
 
+  // Observadores individuais dos modais.
   const modalObservers = new WeakMap();
 
-  // ========================================
+  // =====================================================
   // UTILITARIOS
-  // ========================================
+  // =====================================================
 
   function applyStyles(element, styles) {
     if (!element) return;
 
     Object.entries(styles).forEach(
-      ([key, value]) => {
+      ([property, value]) => {
         element.style.setProperty(
-          key,
+          property,
           String(value),
           "important"
         );
@@ -127,9 +147,10 @@
       .toLowerCase();
   }
 
-  // ========================================
-  // OCULTAR BOTAO NATIVO DO AVISO
-  // ========================================
+  // =====================================================
+  // OCULTAR "NAO MOSTRAR NOVAMENTE"
+  // SOMENTE NO MODAL DESTA CAMPANHA
+  // =====================================================
 
   function hideNativeButton(modal) {
     if (
@@ -150,9 +171,7 @@
         element.getAttribute("aria-label")
       );
 
-      if (
-        text.includes("nao mostrar novamente")
-      ) {
+      if (text.includes("nao mostrar novamente")) {
         applyStyles(element, {
           display: "none"
         });
@@ -182,9 +201,9 @@
     hideNativeButton(modal);
   }
 
-  // ========================================
-  // DIMENSIONAMENTO DO MODAL
-  // ========================================
+  // =====================================================
+  // AJUSTAR O TAMANHO DO MODAL
+  // =====================================================
 
   function resizeModal(modal) {
     if (
@@ -230,6 +249,8 @@
 
     const mobile = screenWidth < 700;
 
+    // Reservar altura para cabecalho,
+    // mensagem e botoes.
     const reservedHeight = mobile ? 260 : 190;
 
     const availableHeight = Math.max(
@@ -237,6 +258,7 @@
       screenHeight - reservedHeight
     );
 
+    // A imagem possui proporcao 16:9.
     const widthByHeight =
       availableHeight * (16 / 9);
 
@@ -292,6 +314,8 @@
         : `${Math.floor(availableHeight)}px`
     });
 
+    // Seis colunas no desktop.
+    // Tres ou duas em telas menores.
     const contentWidth = Math.max(
       0,
       finalWidth - 24
@@ -311,9 +335,9 @@
     });
   }
 
-  // ========================================
-  // CRIAR OS SEIS BOTOES
-  // ========================================
+  // =====================================================
+  // CRIAR BOTOES DOS GRUPOS
+  // =====================================================
 
   function createButtons() {
     const nav = createElement("nav", {
@@ -335,18 +359,17 @@
     );
 
     SPRINTS.forEach((sprint) => {
-      const isDisabled = sprint.esgotado;
+      const disabled = sprint.esgotado;
 
-      // Sprints esgotadas nao recebem link.
+      // Sprints encerradas nao recebem link.
       const button = document.createElement(
-        isDisabled ? "span" : "a"
+        disabled ? "span" : "a"
       );
 
-      const label = isDisabled
+      // Substituir nome por ESGOTADO.
+      button.textContent = disabled
         ? "ESGOTADO"
         : sprint.name;
-
-      button.textContent = label;
 
       applyStyles(button, {
         display: "flex",
@@ -357,37 +380,41 @@
         "min-height": "44px",
         padding: "9px 5px",
 
-        background: isDisabled
+        // Cinza nas turmas esgotadas.
+        background: disabled
           ? "#858585"
           : sprint.color,
 
         color: "#ffffff",
 
-        "font-family": "Arial, sans-serif",
+        "font-family":
+          "Arial, Helvetica, sans-serif",
+
         "font-size": "13px",
         "font-weight": "700",
         "line-height": "1.25",
         "text-decoration": "none",
         "border-radius": "9px",
 
-        "box-shadow": isDisabled
+        "box-shadow": disabled
           ? "none"
           : "0 3px 9px rgba(0,0,0,.15)",
 
         "box-sizing": "border-box",
         "overflow-wrap": "break-word",
 
-        cursor: isDisabled
+        cursor: disabled
           ? "not-allowed"
           : "pointer",
 
-        opacity: isDisabled ? "0.85" : "1",
+        opacity: disabled ? "0.85" : "1",
 
         transition:
           "filter .2s ease, transform .2s ease"
       });
 
-      if (isDisabled) {
+      if (disabled) {
+        // Sem href, sem evento de clique.
         button.setAttribute(
           "aria-label",
           `Sprint ${sprint.name} - inscrições esgotadas`
@@ -439,9 +466,9 @@
     return nav;
   }
 
-  // ========================================
-  // TEXTO ENTRE IMAGEM E BOTOES
-  // ========================================
+  // =====================================================
+  // MENSAGEM ABAIXO DA IMAGEM
+  // =====================================================
 
   function createMessage() {
     return createElement(
@@ -450,7 +477,8 @@
         margin: "10px 0 9px",
         padding: "0 6px",
         color: "#173257",
-        "font-family": "Arial, sans-serif",
+        "font-family":
+          "Arial, Helvetica, sans-serif",
         "font-size":
           "clamp(14px,1.5vw,20px)",
         "font-weight": "800",
@@ -461,9 +489,9 @@
     );
   }
 
-  // ========================================
-  // INICIALIZAR O AVISO PERSONALIZADO
-  // ========================================
+  // =====================================================
+  // RECONSTRUIR O AVISO DO ENTER
+  // =====================================================
 
   function initialize(marker) {
     if (!marker || !marker.isConnected) {
@@ -484,6 +512,7 @@
       return false;
     }
 
+    // Evitar reconstruir duas vezes.
     if (
       modal.dataset.evoluaSprintsReady === "1"
     ) {
@@ -492,7 +521,8 @@
       return true;
     }
 
-    // Capturar imagem cadastrada no ENTER.
+    // Capturar somente a imagem cadastrada
+    // originalmente no aviso do ENTER.
     const nativeImage = body.querySelector("img");
 
     if (!nativeImage) return false;
@@ -504,17 +534,19 @@
 
     if (!imageSource) return false;
 
+    // Container principal.
     const wrap = createElement("section", {
       width: "100%",
       margin: "0 auto",
       padding: "0",
       "box-sizing": "border-box",
-      "font-family": "Arial, sans-serif"
+      "font-family":
+        "Arial, Helvetica, sans-serif"
     });
 
     wrap.dataset.evoluaSprintsWrap = "1";
 
-    // Recriar a imagem sem o recorte nativo.
+    // Recriar a imagem sem estilos do ENTER.
     const image = document.createElement("img");
 
     image.dataset.evoluaSprintsImage = "1";
@@ -529,9 +561,11 @@
       "border-radius": "10px"
     });
 
+    // Mensagem e botoes.
     const message = createMessage();
     const links = createButtons();
 
+    // Preservar marcador.
     marker.hidden = true;
 
     marker.setAttribute(
@@ -539,7 +573,7 @@
       "true"
     );
 
-    // Recria somente o conteudo deste aviso.
+    // Reconstrucao do conteudo.
     wrap.append(image, message, links);
 
     body.replaceChildren(marker, wrap);
@@ -576,28 +610,29 @@
 
     resizeModal(modal);
 
-    // Oculta somente o botao nativo deste aviso.
+    // Ocultar o botao nativo de repeticao.
     watchNativeButton(modal);
 
+    // Recalcular apos carregamento da imagem.
     image.addEventListener("load", () => {
       resizeModal(modal);
     });
 
     console.info(
-      "[Central de Sprints] V4 inicializada."
+      "[Central de Sprints] V5 inicializada."
     );
 
     console.info(
       "[Central de Sprints] " +
-      "Gamificacao e Evolua Oferta esgotadas."
+      "4 turmas esgotadas; 2 disponiveis."
     );
 
     return true;
   }
 
-  // ========================================
+  // =====================================================
   // OBSERVAR CARREGAMENTO DO ENTER
-  // ========================================
+  // =====================================================
 
   function scan() {
     document.querySelectorAll(
